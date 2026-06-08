@@ -1,8 +1,10 @@
 # Путевой.AI — статус проекта
 
-> Дата актуальности: 2026-06-05
-> Текущая версия: MVP + базовый auth готов, сервер на TimeWeb подготовлен, ждём деплоя
+> Дата актуальности: 2026-06-08
+> Текущая версия: MVP live на VPS, auth + per-user работают, идут UX-доводки
 > Изначальный план: [PLAN_MVP.md](PLAN_MVP.md)
+> **Сервис**: http://72.56.39.144:8000
+> **GitHub**: https://github.com/alextihonoff404-png/putevoy-ai (public, main)
 
 ---
 
@@ -316,19 +318,66 @@ set YANDEX_GEOCODER_KEY=ваш-ключ-из-developer.tech.yandex.ru
 
 При первом билде упал с `jinja2.exceptions.TemplateNotFound: 'login.html'` — `pip install .` не копирует не-Python файлы в site-packages. Решение в Dockerfile: `pip install --no-cache-dir -e .` (editable) — пакет линкуется на `/app/src`, templates/static/cell_maps остаются на месте. Альтернатива на будущее: прописать `[tool.setuptools.package-data]` в `pyproject.toml` и собирать обычным install.
 
-### Что осталось вручную
+### Что зарегистрировано на проде
 
-1. **Регистрация / первичная настройка** (через http://72.56.39.144:8000/register) — заполнить профиль, добавить ТС, маршруты.
-2. **Опционально** — перенос локальной БД (с настроенными Changan + Foyah + история прогонов) в `putevoy_data` volume на сервере, если хочется не вводить заново.
-3. **Домен + HTTPS** — зарегистрировать имя на 2domains.ru (рекомендации: `putevoylist.ru`, `moiputevoy.ru`), направить A-запись на 72.56.39.144, добавить Caddy в compose (раздел «После регистрации домена» в `DEPLOY.md`), переключить `PUTEVOY_COOKIE_HTTPS_ONLY=true`.
+- Пользователь **alextihonoff@list.ru** зарегистрирован первым, профиль настроен:
+  - Организация: ООО «ИИС», механик Павлов В.О.
+  - Водитель: Тихонов А.Ю.
+  - ТС: Changan CS55plus (Н960ХА 198), стартовое состояние на 2026-05-29: одометр 51682 км, остаток 19.92 л
+- БД на сервере **пустая по адресам и истории** — заполнялась с нуля (не переносили локальную)
 
-### Что НЕ сделано из-за пауз / решений в процессе
+---
 
-- **Доменное имя** — обсудили варианты, рекомендовал `putevoylist.ru` или `moiputevoy.ru` (топ-имена `putevoy.ru / putlist.ru / putevoy24.ru / putevoi.ru` заняты). Пользователь смотрит варианты на 2domains.ru. До регистрации деплой будет по IP (`http://72.56.39.144`).
+## 8. UX-доводки и GitHub workflow (текущая сессия, 2026-06-08)
 
-### Как возобновить
+### СДЕЛАНО локально и в GitHub-репо (но НЕ на сервере)
 
-Точка входа: **задача 42** (защита роутов через `get_current_user` dependency, потом 43 → 44 → 45).
+Накоплены 3 фикса — закоммичены в `main`, но **сервер ещё на старой версии** (rate-limit TimeWeb мешал заливать через scp):
 
-В новом чате: «Продолжаем Путевой.AI с задачи 42» — или прислать ссылку на этот файл.
+1. **`Dockerfile`: `--timeout-keep-alive 120`** — фиксит баг, когда длинное заполнение формы рвало keep-alive сокет (default 5 сек → форма «не отправлялась»).
+2. **Кнопка «Выйти»** в шапке: `base.html` уже содержит условие `{% if request.state.current_user %}`. В `app.py` middleware теперь ставит `request.state.current_user = user`. Раньше всегда был None → кнопка не показывалась.
+3. **«Глаз» в поле пароля** на /login и /register: вынесен макрос `password_field` в `templates/_password_field.html`, импортируется из login.html и register.html. JS-обработчик клика в `auth_layout.html`. Иконка SVG (открытый/зачёркнутый глаз), переключение в один клик.
+
+### GitHub-репо настроен (заменяет scp/tar возню)
+
+- Public репо: **https://github.com/alextihonoff404-png/putevoy-ai**
+- `git`, `gh` CLI у пользователя установлены
+- `.gitignore` расширен (data/, `.env`, `*.tar.gz`, `.claude/`, временные)
+- Первый коммит запушен. 85 файлов, ~190 KB.
+
+### ОЧЕРЕДЬ задач
+
+| # | Задача | Объём | Статус |
+|---|---|---|---|
+| **48** | Мигрировать `/opt/putevoy` на git pull (одна ssh-команда наготове ниже) — это применит на сервере все 3 UX-фикса сверху | 1 минута | ⏳ ждёт пользователя |
+| **49** | Прекомпилировать Tailwind CSS в статику (сейчас CDN с JIT-компилятором тормозит все переходы) | 30-60 мин | ⏳ |
+| **50** | Баг `_suggest_next_month`: при отсутствии прогонов предлагает «предыдущий календарный месяц», не учитывая `vehicle.start_date` → юзеру с start_date=29.05.2026 предлагает «май» вместо «июнь» | 15 мин | ⏳ |
+| **51** | Перенос локальной БД (история прогонов март/апрель/май + каталог адресов Changan) на сервер — опционально, если не хочется заводить вручную | 20 мин | опц. |
+| **52** | Домен + HTTPS через Caddy (см. раздел в `DEPLOY.md`) | 1-2 ч | опц. |
+
+### Команда для миграции сервера на git (задача 48)
+
+```powershell
+ssh -i $env:USERPROFILE\.ssh\putevoy_deploy root@72.56.39.144 'which git > /dev/null 2>&1 || (apt-get update -qq && apt-get install -y -qq git); cd /opt && mv putevoy putevoy-bak && git clone https://github.com/alextihonoff404-png/putevoy-ai.git putevoy && cp putevoy-bak/.env putevoy/.env && cd putevoy && docker compose up -d --build && echo DEPLOY-OK'
+```
+
+После `DEPLOY-OK`:
+- Volumes `putevoy_data` / `putevoy_downloads` остаются на месте — БД и история не теряются (Docker named volumes хранятся независимо от `/opt/putevoy`)
+- Применятся все 3 UX-фикса
+- Дальше **все обновления одной командой**: `ssh ... "cd /opt/putevoy && git pull && docker compose up -d --build"`. Никаких scp.
+
+### Тонкости и накопленные знания
+
+- **Rate-limit TimeWeb**: при нескольких ssh/scp подряд (>3-4 за минуту) сервер блокирует подключения на 2-5 минут с ошибкой `Connection timed out during banner exchange`. Мой PowerShell-tool (выполняет ssh от моего имени) почему-то блокируется ещё агрессивнее, чем подключения пользователя. Решение — git workflow выше.
+- **Editable install в Dockerfile** (`pip install -e .`) обязателен, иначе HTML-шаблоны, cell_maps json, builtin_templates xlsx не попадают в site-packages.
+- **Порядок middleware в Starlette**: SessionMiddleware регистрируется ПОСЛЕ `@app.middleware("http")` через `add_middleware` — иначе auth-middleware не видит `request.session`.
+- **На сервере в логах** прорывается «healthcheck `GET /login` от 127.0.0.1» каждые 30 сек — это `docker compose healthcheck`, норма.
+
+### Как возобновить в новом чате
+
+В новом чате:
+1. Открыть STATUS.md — здесь вся актуальная картина.
+2. Сразу видно: задача 48 (миграция сервера) и далее 49/50.
+3. GitHub-репо — источник истины кода. Локальная папка `D:\ИИ\Putevoy list` синхронизирована с `main`.
+4. Сказать мне: «продолжаем с задачи 48» (или с той, на которой остановились).
 

@@ -44,3 +44,6 @@ Thumbs.db
 
 # Старые артефакты
 run.bat
+
+# Локальный конфиг Claude Code
+.claude/
