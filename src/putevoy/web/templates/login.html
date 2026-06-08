@@ -1,0 +1,22 @@
+{% extends "auth_layout.html" %}
+{% from "_password_field.html" import password_field %}
+{% block title %}Вход — Путевой.AI{% endblock %}
+{% block auth_title %}Вход{% endblock %}
+{% block auth_subtitle %}Введите email и пароль, чтобы продолжить работу.{% endblock %}
+
+{% block auth_form %}
+<form method="post" action="/login" class="space-y-3">
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Email</span>
+        <input type="email" name="email" required autofocus
+               value="{{ email if email else '' }}"
+               placeholder="you@example.com" class="w-full">
+    </label>
+    {{ password_field('password', 'Пароль') }}
+    <button type="submit" class="btn btn-primary w-full justify-center">Войти</button>
+</form>
+{% endblock %}
+
+{% block auth_footer %}
+Нет аккаунта? <a href="/register" class="link">Зарегистрироваться</a>
+{% endblock %}

@@ -1,0 +1,60 @@
+# Compose-стек для Путевой.AI.
+#
+# Запуск на сервере:
+#   1. Скопировать .env.example → .env, прописать PUTEVOY_SESSION_SECRET.
+#   2. docker compose up -d --build
+#
+# На обновлении:
+#   git pull && docker compose up -d --build
+#
+# Логи:
+#   docker compose logs -f web
+#
+# Данные (БД, downloads) живут в named volumes — переживают перезапуски и rebuild.
+# Чтобы сбэкапить БД: docker run --rm -v putevoy_data:/data -v $(pwd):/backup \
+#                     alpine tar czf /backup/putevoy_data.tar.gz /data
+
+services:
+  web:
+    build: .
+    container_name: putevoy
+    restart: unless-stopped
+    # Порт 8000 наружу — для прямого доступа.
+    # Когда поднимем Caddy/nginx с HTTPS, можно убрать публикацию
+    # и оставить только внутреннюю сеть.
+    ports:
+      - "8000:8000"
+    environment:
+      # Секрет для подписи сессионных cookie. ОБЯЗАТЕЛЬНО переопределить в .env.
+      # Минимум 32 символа случайных. Сгенерировать:
+      #   python -c "import secrets; print(secrets.token_urlsafe(48))"
+      PUTEVOY_SESSION_SECRET: ${PUTEVOY_SESSION_SECRET:?PUTEVOY_SESSION_SECRET must be set in .env}
+      PUTEVOY_DATA_DIR: /data
+      # API-ключ Яндекс.Геокодера (если используется автоопределение расстояний).
+      # Оставьте пустым, если не нужен — OSRM работает без ключа.
+      YANDEX_GEOCODER_API_KEY: ${YANDEX_GEOCODER_API_KEY:-}
+    volumes:
+      # БД пользователя + загруженные xlsx сохраняются между перезапусками.
+      - putevoy_data:/data
+      # downloads — временные xlsx/pdf файлы. Можно сделать tmpfs если важна экономия диска.
+      - putevoy_downloads:/tmp/putevoy_downloads
+    # Лимиты под VPS 1 GB RAM + 2 GB swap.
+    # LibreOffice при конвертации может потребить ~400-500 MB на короткий момент.
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+        reservations:
+          memory: 300M
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/login', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  putevoy_data:
+    name: putevoy_data
+  putevoy_downloads:
+    name: putevoy_downloads

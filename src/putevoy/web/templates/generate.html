@@ -1,0 +1,369 @@
+{% extends "base.html" %}
+{% set active_page = 'generate' %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2">
+        {% if existing_run %}
+        <div class="mb-6">
+            <h1 class="text-2xl font-semibold mb-1">Перегенерировать {{ month_name }} {{ year }}</h1>
+            <p class="text-sm" style="color: var(--text-muted);">
+                Этот месяц уже был сгенерирован
+                {% if existing_run.validation_ok %}<span style="color: #047857;">(валидно)</span>{% else %}<span style="color: #b45309;">(с замечаниями)</span>{% endif %}.
+                Заправки подгружены из последней попытки — поправьте их и нажмите «Перегенерировать»
+                ещё раз. Состояние одометра и остатка пересчитается автоматически.
+            </p>
+        </div>
+        {% else %}
+        <div class="mb-6">
+            <h1 class="text-2xl font-semibold mb-1">Новый месяц</h1>
+            <p class="text-sm" style="color: var(--text-muted);">
+                Выберите месяц и введите заправки за период. Система сама распределит
+                {{ working_days_count }} рабочих дней по адресам так, чтобы баланс топлива сходился.
+            </p>
+        </div>
+        {% endif %}
+
+        {% if previous_issues and previous_issues.issues %}
+        <div class="card p-4 mb-5"
+             style="background: var(--warning-soft); border-color: #fde68a;">
+            <p class="font-medium text-sm mb-2" style="color: #92400e;">
+                ⚠ В прошлой генерации были замечания:
+            </p>
+            <ul class="text-xs space-y-1 mb-3 max-h-40 overflow-y-auto" style="color: #b45309;">
+                {% for issue in previous_issues.issues %}
+                <li>• {{ issue.message }}</li>
+                {% endfor %}
+            </ul>
+            <details class="text-xs" style="color: #92400e;">
+                <summary class="cursor-pointer hover:underline">Как это исправить?</summary>
+                <ul class="mt-2 space-y-1 ml-4 list-disc">
+                    {% set codes = previous_issues.issues | map(attribute='code') | list %}
+                    {% if 'FUEL_NEGATIVE' in codes %}
+                    <li><strong>Остаток ушёл в минус</strong> — добавьте больше заправок,
+                        либо отметьте дни простоя (отпуск/праздники), когда машина не ездила.</li>
+                    {% endif %}
+                    {% if 'TANK_OVERFLOW' in codes %}
+                    <li><strong>Бак переполнен</strong> — слишком крупная заправка пришла
+                        в день, когда в баке ещё много топлива.</li>
+                    {% endif %}
+                    {% if 'ODOMETER_GAP' in codes %}
+                    <li><strong>Разрыв одометра</strong> — обратитесь к разработчику.</li>
+                    {% endif %}
+                    {% if 'TIME_LATE' in codes %}
+                    <li><strong>Возврат позже 21:00</strong> — слишком много поездок в один день.</li>
+                    {% endif %}
+                </ul>
+            </details>
+        </div>
+        {% endif %}
+
+        <form method="post" action="/generate" hx-post="/generate" hx-target="#result"
+              hx-swap="innerHTML" hx-indicator="#spinner" class="space-y-5">
+
+            <section class="card p-5">
+                <h2 class="text-sm font-semibold mb-4" style="color: var(--text-muted);">1. Какой месяц</h2>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="block">
+                        <span class="text-xs block mb-1" style="color: var(--text-muted);">Месяц</span>
+                        <select name="month" class="w-full" onchange="reloadForMonth()">
+                            {% for m, name in months %}
+                            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ name }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label class="block">
+                        <span class="text-xs block mb-1" style="color: var(--text-muted);">Год</span>
+                        <select name="year" class="w-full" onchange="reloadForMonth()">
+                            {% for y in years_range %}
+                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+                <script>
+                // При смене месяца или года — переход на /generate с новыми параметрами.
+                // Это обновляет календарь рабочих дней, подгружает ранее введённые
+                // заправки и отмеченные дни простоя именно для выбранного периода.
+                function reloadForMonth() {
+                    const y = document.querySelector('[name=year]').value;
+                    const m = document.querySelector('[name=month]').value;
+                    window.location = '/generate?year=' + y + '&month=' + m;
+                }
+                </script>
+                <p class="text-xs mt-3" style="color: var(--text-faded);">
+                    Стартовое состояние: одометр {{ profile.state.current_odometer_km }} км,
+                    остаток {{ profile.state.current_fuel_balance_l }} л
+                    (на {{ profile.state.last_date }}).
+                </p>
+            </section>
+
+            <section class="card p-5">
+                <h2 class="text-sm font-semibold mb-3" style="color: var(--text-muted);">2. Заправки месяца</h2>
+
+                <div class="grid grid-cols-12 gap-2 text-xs mb-1 px-2" style="color: var(--text-muted);">
+                    <div class="col-span-3">Дата</div>
+                    <div class="col-span-3">Литры</div>
+                    <div class="col-span-3">Цена за литр, ₽</div>
+                    <div class="col-span-2">Сумма, ₽</div>
+                    <div class="col-span-1"></div>
+                </div>
+
+                <div id="fueling_rows" class="space-y-2">
+                    {% if existing_fuelings %}
+                        {% for f in existing_fuelings %}
+                        <div class="fueling-row grid grid-cols-12 gap-2 items-center">
+                            <input type="date" name="fueling_date" value="{{ f.date.isoformat() }}"
+                                   class="col-span-3" onchange="updateSum(this)">
+                            <input type="text" inputmode="decimal" name="fueling_liters" value="{{ f.liters }}"
+                                   placeholder="47.63" class="col-span-3" oninput="updateSum(this)">
+                            <input type="text" inputmode="decimal" name="fueling_price" value="{{ f.price_per_l }}"
+                                   placeholder="69.37" class="col-span-3" oninput="updateSum(this)">
+                            <div class="col-span-2 text-sm tabular-nums sum-cell rounded-md px-2.5 text-right flex items-center justify-end"
+                                 style="color: var(--text); border: 1px solid var(--border); background: var(--bg-subtle); height: 2.5rem;">
+                                {{ "%.2f" | format(f.liters * f.price_per_l) }}
+                            </div>
+                            <button type="button" onclick="removeRow(this)"
+                                    class="col-span-1 text-lg leading-none hover:text-red-600"
+                                    style="color: var(--text-faded);">✕</button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="fueling-row grid grid-cols-12 gap-2 items-center">
+                            <input type="date" name="fueling_date" class="col-span-3" onchange="updateSum(this)">
+                            <input type="text" inputmode="decimal" name="fueling_liters" placeholder="47.63"
+                                   class="col-span-3" oninput="updateSum(this)">
+                            <input type="text" inputmode="decimal" name="fueling_price" placeholder="69.37"
+                                   class="col-span-3" oninput="updateSum(this)">
+                            <div class="col-span-2 text-sm tabular-nums sum-cell rounded-md px-2.5 text-right flex items-center justify-end"
+                                 style="color: var(--text-faded); border: 1px solid var(--border); background: var(--bg-subtle); height: 2.5rem;">—</div>
+                            <button type="button" onclick="removeRow(this)"
+                                    class="col-span-1 text-lg leading-none hover:text-red-600"
+                                    style="color: var(--text-faded);">✕</button>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <button type="button" onclick="addRow()" class="mt-3 link text-sm font-medium">
+                    + Добавить заправку
+                </button>
+
+                <p class="text-xs mt-3" style="color: var(--text-faded);">
+                    Если в этом месяце заправок не было — оставьте поля пустыми.
+                </p>
+            </section>
+
+            <section class="card p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h2 class="text-sm font-semibold" style="color: var(--text-muted);">
+                        3. Дни простоя <span class="font-normal" style="color: var(--text-faded);">— опционально</span>
+                    </h2>
+                    <button type="button" onclick="recalcPreview()" class="btn btn-secondary text-xs">
+                        ⟳ Пересчитать прогноз
+                    </button>
+                </div>
+                <p class="text-xs mb-3" style="color: var(--text-faded);">
+                    Отметьте рабочие дни, в которые машина <strong>не использовалась</strong> —
+                    отпуск, командировка, болезнь, расширенные праздники. Эти дни не попадут
+                    в путевые листы. Прогноз остатка пересчитывается при нажатии «Пересчитать».
+                </p>
+
+                <div id="skip_calendar" class="grid grid-cols-7 gap-1 text-center text-xs mb-3">
+                    {% for w in ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'] %}
+                    <div class="font-medium py-1" style="color: var(--text-muted);">{{ w }}</div>
+                    {% endfor %}
+                </div>
+
+                <div id="preview_result" class="rounded-md p-3 text-sm"
+                     style="background: var(--bg-subtle); color: var(--text-muted);">
+                    Нажмите «Пересчитать прогноз», чтобы увидеть, сходится ли баланс.
+                </div>
+            </section>
+
+            <div class="flex items-center gap-3">
+                <button type="submit" class="btn btn-primary px-6">
+                    {% if existing_run %}Перегенерировать{% else %}Сгенерировать путевые листы{% endif %}
+                </button>
+                <span id="spinner" class="htmx-indicator text-sm" style="color: var(--text-muted);">
+                    ⏳ Подбираю маршруты и собираю xlsx…
+                </span>
+            </div>
+        </form>
+    </div>
+
+    <aside class="lg:col-span-1">
+        <div id="result" class="sticky top-6">
+            <div class="card p-5">
+                <h3 class="text-sm font-semibold mb-2">Результат появится здесь</h3>
+                <p class="text-xs" style="color: var(--text-muted);">
+                    Из вашего каталога ({{ routes_count }} адресов) система подберёт маршруты на
+                    {{ working_days_count }} рабочих дней. Если баланс не сходится — подвинет автоматически.
+                </p>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<script>
+// --- Календарь дней простоя ---
+const WORKING_DAYS_ISO = {{ working_days_iso | tojson }};
+const INITIAL_SKIP = new Set({{ existing_skip_dates | tojson }});
+const MONTH_YEAR = [{{ year }}, {{ month }}];
+
+function isoFromYMD(y, m, d) {
+    return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+}
+
+function renderSkipCalendar() {
+    const grid = document.getElementById('skip_calendar');
+    if (!grid) return;
+    const [year, month] = MONTH_YEAR;
+    const monthStart = new Date(year, month - 1, 1);
+    const lastDay = new Date(year, month, 0).getDate();
+    const startCol = (monthStart.getDay() + 6) % 7;
+
+    for (let i = 0; i < startCol; i++) grid.appendChild(document.createElement('div'));
+    const workingSet = new Set(WORKING_DAYS_ISO);
+    for (let day = 1; day <= lastDay; day++) {
+        const iso = isoFromYMD(year, month, day);
+        const cell = document.createElement('div');
+        const isWorking = workingSet.has(iso);
+        const isSkipped = INITIAL_SKIP.has(iso);
+        if (!isWorking) {
+            cell.className = 'py-2 font-light cursor-default';
+            cell.style.color = 'var(--text-faded)';
+            cell.textContent = day;
+        } else {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.iso = iso;
+            btn.dataset.day = String(day);
+            applySkipStyle(btn, isSkipped);
+            btn.addEventListener('click', () => {
+                const skipped = btn.dataset.skipped === '1';
+                applySkipStyle(btn, !skipped);
+            });
+            cell.appendChild(btn);
+        }
+        grid.appendChild(cell);
+    }
+}
+
+function applySkipStyle(btn, skipped) {
+    btn.dataset.skipped = skipped ? '1' : '0';
+    const day = btn.dataset.day;
+    if (skipped) {
+        btn.className = 'py-2 w-full rounded text-sm font-semibold hover:bg-red-50 relative';
+        btn.innerHTML =
+            `<span class="relative inline-block" style="color: var(--text-faded);">` +
+                `<span>${day}</span>` +
+                `<span class="absolute inset-0 flex items-center justify-center text-base leading-none" style="color: var(--danger);">✕</span>` +
+            `</span>`;
+    } else {
+        btn.className = 'py-2 w-full rounded text-sm font-semibold hover:bg-slate-100';
+        btn.style.color = 'var(--text)';
+        btn.innerHTML = day;
+    }
+}
+
+function getSkipDates() {
+    return Array.from(document.querySelectorAll('#skip_calendar button[data-skipped="1"]'))
+        .map(b => b.dataset.iso);
+}
+
+async function recalcPreview() {
+    const out = document.getElementById('preview_result');
+    out.style.background = 'var(--bg-subtle)';
+    out.style.color = 'var(--text-muted)';
+    out.style.border = 'none';
+    out.textContent = '⏳ Считаю прогноз…';
+
+    const form = document.querySelector('form[action="/generate"]');
+    const fd = new FormData(form);
+    fd.delete('skip_date');
+    for (const iso of getSkipDates()) fd.append('skip_date', iso);
+    try {
+        const r = await fetch('/api/preview-generate', {method: 'POST', body: fd});
+        const j = await r.json();
+        if (j.error) {
+            out.style.background = 'var(--danger-soft)';
+            out.style.color = 'var(--danger)';
+            out.textContent = '❌ ' + j.error;
+            return;
+        }
+        const skipCount = getSkipDates().length;
+        let html = '';
+        if (j.valid) {
+            html = `<div style="color: #047857; font-weight: 600;">✅ Баланс сходится</div>`;
+        } else {
+            html = `<div style="color: #b45309; font-weight: 600;">⚠ Есть замечания (${j.fuel_negative_count} ушли в минус, ${j.tank_overflow_count} переполнили бак)</div>`;
+        }
+        html += `<dl class="text-xs mt-2 space-y-0.5" style="color: var(--text-muted);">
+            <div class="flex justify-between"><dt>Рабочих дней:</dt><dd class="font-medium" style="color: var(--text);">${j.days_count}</dd></div>
+            <div class="flex justify-between"><dt>Дней простоя:</dt><dd class="font-medium" style="color: var(--text);">${skipCount}</dd></div>
+            <div class="flex justify-between"><dt>Минимум за месяц:</dt><dd class="font-medium" style="color: ${j.min_balance_l < 0 ? 'var(--danger)' : 'var(--text)'};">${j.min_balance_l} л</dd></div>
+            <div class="flex justify-between"><dt>Остаток на конец:</dt><dd class="font-medium" style="color: var(--text);">${j.final_balance_l} л</dd></div>
+        </dl>`;
+        out.style.background = j.valid ? 'var(--success-soft)' : 'var(--warning-soft)';
+        out.style.color = 'var(--text)';
+        out.innerHTML = html;
+    } catch (e) {
+        out.style.background = 'var(--danger-soft)';
+        out.style.color = 'var(--danger)';
+        out.textContent = '❌ Ошибка сети: ' + e.message;
+    }
+}
+
+renderSkipCalendar();
+
+document.querySelector('form[action="/generate"]').addEventListener('submit', (e) => {
+    const form = e.target;
+    form.querySelectorAll('input[name="skip_date"]').forEach(el => el.remove());
+    for (const iso of getSkipDates()) {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = 'skip_date';
+        hidden.value = iso;
+        form.appendChild(hidden);
+    }
+});
+
+function updateSum(input) {
+    const row = input.closest('.fueling-row');
+    const liters = parseFloat(row.querySelector('[name=fueling_liters]').value.replace(',', '.'));
+    const price = parseFloat(row.querySelector('[name=fueling_price]').value.replace(',', '.'));
+    const cell = row.querySelector('.sum-cell');
+    if (!isNaN(liters) && !isNaN(price)) {
+        cell.textContent = (liters * price).toFixed(2);
+        cell.style.color = 'var(--text)';
+    } else {
+        cell.textContent = '—';
+        cell.style.color = 'var(--text-faded)';
+    }
+}
+
+function addRow() {
+    const rows = document.getElementById('fueling_rows');
+    const first = rows.querySelector('.fueling-row');
+    const clone = first.cloneNode(true);
+    clone.querySelectorAll('input').forEach(i => { i.value = ''; });
+    const sumCell = clone.querySelector('.sum-cell');
+    sumCell.textContent = '—';
+    sumCell.style.color = 'var(--text-faded)';
+    rows.appendChild(clone);
+}
+
+function removeRow(btn) {
+    const row = btn.closest('.fueling-row');
+    const rows = document.getElementById('fueling_rows');
+    if (rows.children.length > 1) {
+        row.remove();
+    } else {
+        row.querySelectorAll('input').forEach(i => { i.value = ''; });
+        const sumCell = row.querySelector('.sum-cell');
+        sumCell.textContent = '—';
+        sumCell.style.color = 'var(--text-faded)';
+    }
+}
+</script>
+{% endblock %}

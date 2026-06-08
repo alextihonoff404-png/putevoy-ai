@@ -1,0 +1,44 @@
+# Локальное окружение Python
+.venv/
+venv/
+env/
+.python-version
+
+# Кеши
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Локальные данные / сгенерированные файлы (в контейнере используются volumes)
+data/
+downloads/
+_server_backups/
+
+# Тесты не нужны в production-образе
+tests/
+
+# Git и dev-инструменты
+.git/
+.gitignore
+.gitattributes
+.github/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Документация на этапе разработки
+STATUS.md
+PLAN_MVP.md
+*.md
+!README.md
+
+# Env-файл с секретами — никогда не должен попасть в образ
+.env
+.env.local

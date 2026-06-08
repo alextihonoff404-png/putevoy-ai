@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+
+# Тесты и линтеры
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Локальные данные сервиса (БД, скачанные xlsx/pdf) — не должны попадать в репо
+data/
+data-tmp-*/
+downloads/
+out/
+_server_backups/
+
+# Артефакты деплоя (tar.gz, которые я гонял на сервер вручную)
+*.tar.gz
+*.tmp.xlsx
+test_download.xlsx
+response.html
+
+# Локальный env с секретами — НИКОГДА в репо
+.env
+.env.local
+.env.deploy
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Старые артефакты
+run.bat

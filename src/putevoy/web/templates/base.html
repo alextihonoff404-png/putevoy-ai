@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Путевой.AI{% endblock %}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    {# Inter — основной шрифт интерфейса (бесплатный, отличная читаемость, де-факто стандарт SaaS) #}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        /* === Палитра (CSS-переменные) — для лёгкой смены темы потом ============ */
+        :root {
+            --bg:           #fafbfc;
+            --bg-elevated:  #ffffff;
+            --bg-subtle:    #f3f4f6;
+            --bg-hover:     #f9fafb;
+
+            --border:       #e5e7eb;
+            --border-strong: #d1d5db;
+
+            --text:         #111827;
+            --text-muted:   #6b7280;
+            --text-faded:   #9ca3af;
+
+            --primary:      #6366f1;   /* indigo-500 — основной акцент */
+            --primary-hover:#4f46e5;
+            --primary-soft: #eef2ff;
+
+            --success:      #10b981;   /* emerald — валидно */
+            --success-soft: #ecfdf5;
+            --warning:      #f59e0b;   /* amber */
+            --warning-soft: #fffbeb;
+            --danger:       #ef4444;
+            --danger-soft:  #fef2f2;
+
+            --shadow-sm:    0 1px 2px 0 rgb(0 0 0 / 0.04);
+            --shadow:       0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+            --shadow-lg:    0 4px 12px -2px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';  /* красивые цифры Inter */
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+        }
+        .font-mono { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; }
+        .tabular-nums { font-variant-numeric: tabular-nums; }
+
+        /* === Поля ввода ====================================================== */
+        input[type="text"], input[type="number"], input[type="date"],
+        input[type="email"], input[type="password"], input:not([type]),
+        select, textarea {
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 0.5rem 0.75rem;
+            background: var(--bg-elevated);
+            transition: border-color 0.15s, box-shadow 0.15s;
+            box-sizing: border-box;
+            line-height: 1.4;
+            height: 2.5rem;
+            font-size: 0.875rem;
+            font-family: inherit;
+            color: var(--text);
+        }
+        textarea { height: auto; min-height: 4rem; padding: 0.625rem 0.75rem; }
+        input::placeholder, textarea::placeholder { color: var(--text-faded); }
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary);
+            outline: none;
+            box-shadow: 0 0 0 3px rgb(99 102 241 / 0.12);
+        }
+        input[type="number"], input[inputmode="decimal"] { text-align: right; }
+        /* Date input: браузер на широком поле растягивает цифры далеко от точек
+           («01  .  06  .  2026»). Ограничиваем ширину и выравниваем по левому краю,
+           чтобы дата читалась компактно как «01.06.2026». */
+        input[type="date"] {
+            text-align: left;
+            max-width: 12rem;
+        }
+
+        /* Select с placeholder — серый, обычной толщины, по центру */
+        select { text-align: center; }
+        select:required:invalid { color: var(--text-faded); font-weight: 400; }
+        select option { color: var(--text); text-align: left; font-weight: 400; }
+        select option[value=""] { color: var(--text-faded); }
+
+        /* Селект переключения активного ТС в шапке.
+           Ширина 280px зашита тройной защитой: wrapper, форма и сам селект.
+           flex-shrink: 0 везде — flex-контейнер не может ничего сжать. */
+        .vehicle-switch-wrapper {
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+            flex: 0 0 280px !important;
+            box-sizing: border-box;
+        }
+        #vehicle-switch-form {
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        .vehicle-select {
+            text-align: left;
+            width: 280px !important;
+            min-width: 280px !important;
+            max-width: 280px !important;
+            flex-shrink: 0;
+            height: 2.25rem;
+            padding: 0.25rem 2.25rem 0.25rem 0.875rem;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+            box-sizing: border-box;
+        }
+
+        input[type="checkbox"], input[type="radio"] {
+            border: 1px solid var(--border-strong);
+            padding: 0;
+            height: auto;
+        }
+
+        /* === Кнопки ========================================================== */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.375rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+            transition: all 0.15s;
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-primary:hover { background: var(--primary-hover); box-shadow: var(--shadow); }
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text);
+            border-color: var(--border);
+            box-shadow: var(--shadow-sm);
+        }
+        .btn-secondary:hover { background: var(--bg-hover); border-color: var(--border-strong); }
+        .btn-ghost { color: var(--text-muted); }
+        .btn-ghost:hover { color: var(--text); background: var(--bg-hover); }
+
+        /* === Карточки ======================================================== */
+        .card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 0.75rem;
+            box-shadow: var(--shadow-sm);
+        }
+        .card-elevated { box-shadow: var(--shadow); }
+
+        /* === Навигация ======================================================== */
+        .nav-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.375rem;
+            color: var(--text-muted);
+            padding: 0.5rem 0.875rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.15s;
+        }
+        .nav-link:hover { background: var(--bg-hover); color: var(--text); }
+        .nav-link.active {
+            background: var(--primary-soft);
+            color: var(--primary-hover);
+        }
+        .badge {
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            padding: 0.125rem 0.375rem;
+            border-radius: 9999px;
+            font-size: 0.6875rem;
+            font-weight: 600;
+            margin-left: 0.25rem;
+        }
+        .nav-link.active .badge { background: white; color: var(--primary-hover); }
+
+        /* === Бейджи статусов ================================================== */
+        .badge-success { background: var(--success-soft); color: #047857; }
+        .badge-warning { background: var(--warning-soft); color: #b45309; }
+        .badge-info    { background: var(--primary-soft); color: var(--primary-hover); }
+
+        /* === Таблицы ========================================================= */
+        table { border-collapse: collapse; }
+        tbody tr { transition: background 0.1s; }
+        tbody tr:hover { background: var(--bg-hover); }
+
+        /* === Утилиты ========================================================= */
+        a { color: inherit; }
+        a.link { color: var(--primary); }
+        a.link:hover { color: var(--primary-hover); text-decoration: underline; }
+
+        /* === Action-chips — компактные кнопки-действия в таблицах ============ */
+        .action-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.25rem 0.625rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            border: 1px solid transparent;
+            transition: all 0.15s;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        .action-chip:hover {
+            background: var(--bg-hover);
+            color: var(--text);
+            border-color: var(--border);
+        }
+        /* На подсвеченных строках (active-row) серый chip-«Изменить» сливался
+           с фоном. Делаем у него явную белую заливку и тонкую рамку. */
+        tr.active-row .action-chip:not(.chip-primary):not(.chip-success):not(.chip-danger) {
+            background: white;
+            border-color: var(--border);
+            color: var(--text);
+        }
+        tr.active-row .action-chip:not(.chip-primary):not(.chip-success):not(.chip-danger):hover {
+            background: var(--bg-hover);
+            border-color: var(--border-strong);
+        }
+        .action-chip.chip-primary {
+            background: var(--primary-soft);
+            color: var(--primary-hover);
+        }
+        .action-chip.chip-primary:hover { background: #e0e7ff; border-color: #c7d2fe; }
+        .action-chip.chip-success {
+            background: var(--success-soft);
+            color: #047857;
+        }
+        .action-chip.chip-success:hover { background: #d1fae5; border-color: #a7f3d0; }
+        .action-chip.chip-danger {
+            background: var(--danger-soft);
+            color: var(--danger);
+        }
+        .action-chip.chip-danger:hover { background: #fee2e2; border-color: #fecaca; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="bg-white border-b" style="border-color: var(--border);">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center gap-6">
+                <a href="/" class="flex items-center gap-2.5 group">
+                    {# SVG-логотип: стилизованная стрелка-путь #}
+                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="0" y="0" width="28" height="28" rx="7" fill="url(#logo-gradient)"/>
+                        <path d="M7 18 Q 11 8, 14 14 T 21 10"
+                              stroke="white" stroke-width="2.25"
+                              stroke-linecap="round" fill="none"/>
+                        <circle cx="21" cy="10" r="2" fill="white"/>
+                        <defs>
+                            <linearGradient id="logo-gradient" x1="0" y1="0" x2="28" y2="28">
+                                <stop offset="0%" stop-color="#6366f1"/>
+                                <stop offset="100%" stop-color="#8b5cf6"/>
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                    <span class="text-base font-semibold tracking-tight">Путевой<span style="color: var(--primary);">.AI</span></span>
+                </a>
+                {% if has_profile and vehicles and vehicles|length > 1 %}
+                <div class="vehicle-switch-wrapper">
+                    <form method="post" action="/vehicles/switch/0" id="vehicle-switch-form" style="width: 100%; margin: 0;">
+                        <select onchange="this.form.action='/vehicles/switch/'+this.value; this.form.submit();"
+                                class="text-sm vehicle-select">
+                            {% for v in vehicles %}
+                            <option value="{{ v.id }}" {% if v.id == active_vehicle_id %}selected{% endif %}>
+                                {{ v.make_model }} · {{ v.license_plate }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            <nav class="flex items-center gap-1">
+                {% if has_profile %}
+                <a href="/dashboard" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Обзор</a>
+                <a href="/vehicles" class="nav-link {% if active_page == 'vehicles' %}active{% endif %}">
+                    Авто<span class="badge">{{ vehicles|length }}</span>
+                </a>
+                <a href="/routes" class="nav-link {% if active_page == 'routes' %}active{% endif %}">
+                    Адреса<span class="badge">{{ routes_count }}</span>
+                </a>
+                <a href="/generate" class="nav-link {% if active_page == 'generate' %}active{% endif %}">Новый месяц</a>
+                <a href="/history" class="nav-link {% if active_page == 'history' %}active{% endif %}">
+                    История<span class="badge">{{ runs_count }}</span>
+                </a>
+                <a href="/setup" class="nav-link {% if active_page == 'setup' %}active{% endif %}">Профиль</a>
+                {% endif %}
+                {% if request.state.current_user %}
+                <form method="post" action="/logout" class="ml-3 inline">
+                    <button class="nav-link" type="submit"
+                            title="Выйти ({{ request.state.current_user.email }})"
+                            style="color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                            <polyline points="16 17 21 12 16 7"></polyline>
+                            <line x1="21" y1="12" x2="9" y2="12"></line>
+                        </svg>
+                        Выйти
+                    </button>
+                </form>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    <main class="flex-1 w-full max-w-6xl mx-auto px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="w-full max-w-6xl mx-auto px-6 py-6 text-xs" style="color: var(--text-faded);">
+        © 2026 · Сервис автоматической подготовки путевых листов
+    </footer>
+</body>
+</html>

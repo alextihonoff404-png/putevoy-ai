@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% set active_page = 'dashboard' %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold mb-1">Обзор</h1>
+    <p class="text-sm" style="color: var(--text-muted);">
+        Привет, {{ profile.driver.full_name }} · {{ profile.vehicle.make_model }} · {{ profile.vehicle.license_plate }}
+    </p>
+</div>
+
+{# === Статистика-карточки ============================================== #}
+<div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+    <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-muted);">Одометр</div>
+        <div class="text-2xl font-semibold tabular-nums">{{ profile.state.current_odometer_km }} <span class="text-sm font-normal" style="color: var(--text-muted);">км</span></div>
+    </div>
+    <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-muted);">Остаток в баке</div>
+        <div class="text-2xl font-semibold tabular-nums">
+            {{ "%.1f"|format(profile.state.current_fuel_balance_l) }}
+            <span class="text-sm font-normal" style="color: var(--text-muted);">л / {{ profile.vehicle.tank_capacity_l }} л</span>
+        </div>
+        {% set pct = (profile.state.current_fuel_balance_l / profile.vehicle.tank_capacity_l * 100) | round(0) %}
+        <div class="mt-2 h-1 rounded-full overflow-hidden" style="background: var(--bg-subtle);">
+            <div class="h-full rounded-full" style="width: {{ pct }}%; background: var(--primary);"></div>
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-muted);">Месяцев в истории</div>
+        <div class="text-2xl font-semibold tabular-nums">{{ runs|length }}</div>
+        <div class="text-xs mt-1" style="color: var(--text-muted);">
+            на {{ profile.state.last_date }}
+        </div>
+    </div>
+    <div class="card p-4">
+        <div class="text-xs uppercase tracking-wider mb-1" style="color: var(--text-muted);">Следующий месяц</div>
+        <div class="text-2xl font-semibold">{{ MONTH_NOMINATIVE_RU[next_month] }} {{ next_year }}</div>
+        <a href="/generate?year={{ next_year }}&month={{ next_month }}" class="link text-xs mt-1 inline-block">
+            Сгенерировать →
+        </a>
+    </div>
+</div>
+
+{% if not routes_count %}
+<div class="card p-4 mb-4" style="border-color: #fde68a; background: var(--warning-soft);">
+    <div class="flex items-start gap-3">
+        <span class="text-lg">⚠</span>
+        <div class="flex-1">
+            <p class="font-medium text-sm" style="color: #92400e;">Сначала добавьте адреса</p>
+            <p class="text-xs mt-0.5" style="color: #b45309;">
+                Прежде чем генерировать путевые листы, заполните каталог маршрутов, куда ездите.
+            </p>
+        </div>
+        <a href="/routes" class="btn btn-secondary text-xs">Каталог адресов →</a>
+    </div>
+</div>
+{% endif %}
+
+<div>
+    <div class="card overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3.5 border-b" style="border-color: var(--border);">
+                <h2 class="text-sm font-semibold">Сгенерированные месяцы</h2>
+                <a href="/generate?year={{ next_year }}&month={{ next_month }}" class="link text-sm">+ Новый месяц</a>
+            </div>
+            {% if runs %}
+            <table class="min-w-full text-sm">
+                <thead>
+                    <tr class="text-left text-xs uppercase tracking-wider border-b" style="color: var(--text-muted); border-color: var(--border);">
+                        <th class="px-5 py-2.5 font-medium">Месяц</th>
+                        <th class="px-5 py-2.5 font-medium text-center">Статус</th>
+                        <th class="px-5 py-2.5 font-medium text-right">Создан</th>
+                        <th class="px-5 py-2.5 font-medium text-right">Скачать</th>
+                        <th class="px-5 py-2.5 font-medium text-right">Действие</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y" style="border-color: var(--border);">
+                    {% for run in runs %}
+                    <tr>
+                        <td class="px-5 py-3 font-medium">{{ MONTH_NOMINATIVE_RU[run.month] }} {{ run.year }}</td>
+                        <td class="px-5 py-3 text-center">
+                            {% if run.validation_ok %}
+                            <span class="badge-success text-xs px-2 py-0.5 rounded-full font-medium">валидно</span>
+                            {% else %}
+                            <span class="badge-warning text-xs px-2 py-0.5 rounded-full font-medium">замечания</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-right text-xs" style="color: var(--text-muted);">
+                            {{ run.generated_at.strftime('%d.%m.%Y · %H:%M') }}
+                        </td>
+                        <td class="px-5 py-3 text-right space-x-1">
+                            <a href="/preview/waybill/{{ run.year }}/{{ run.month }}" target="_blank" class="action-chip">PDF</a>
+                            <a href="/download/waybill/{{ run.year }}/{{ run.month }}" class="action-chip chip-primary">Путевые</a>
+                            <a href="/download/fuel-month/{{ run.year }}/{{ run.month }}" class="action-chip chip-success">Журнал</a>
+                        </td>
+                        <td class="px-5 py-3 text-right space-x-1">
+                            <a href="/generate?year={{ run.year }}&month={{ run.month }}" class="action-chip">
+                                Изменить
+                            </a>
+                            <form method="post"
+                                  action="/generate/{{ run.year }}/{{ run.month }}/delete"
+                                  class="inline"
+                                  onsubmit="return confirm('Удалить путевые листы за {{ MONTH_NOMINATIVE_RU[run.month] }} {{ run.year }}?');">
+                                <button class="action-chip chip-danger">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center px-8 py-12">
+                <div class="text-4xl mb-3">📋</div>
+                <p class="text-sm mb-4" style="color: var(--text-muted);">
+                    Сгенерированных месяцев пока нет.
+                </p>
+                <div class="rounded-lg p-4 text-left text-sm max-w-md mx-auto mb-4"
+                     style="background: var(--warning-soft); border: 1px solid #fde68a;">
+                    <p class="font-medium mb-1" style="color: #92400e;">⚠ Проверьте стартовые данные</p>
+                    <p class="text-xs leading-relaxed" style="color: #b45309;">
+                        Перед генерацией первого месяца убедитесь, что
+                        <strong>одометр</strong> ({{ profile.state.current_odometer_km }} км),
+                        <strong>остаток топлива</strong> ({{ profile.state.current_fuel_balance_l }} л)
+                        и <strong>дата</strong> ({{ profile.state.last_date }}) в Профиле — актуальные.
+                    </p>
+                    <a href="/setup" class="text-xs underline mt-2 inline-block" style="color: #92400e;">
+                        Открыть Профиль →
+                    </a>
+                </div>
+                <a href="/generate?year={{ next_year }}&month={{ next_month }}" class="btn btn-primary">
+                    Сгенерировать первый месяц →
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

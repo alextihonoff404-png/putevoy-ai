@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% set active_page = 'vehicles' %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold mb-1">Автомобили</h1>
+    <p class="text-sm" style="color: var(--text-muted);">
+        Все ТС, которые ведутся в системе. Каждое имеет свой каталог адресов,
+        заправки и путевые листы. Переключение — селект в шапке.
+    </p>
+</div>
+
+{% if vehicles_full %}
+<div class="card overflow-hidden mb-6">
+    <table class="min-w-full text-sm">
+        <thead>
+            <tr class="text-left text-xs uppercase tracking-wider border-b"
+                style="color: var(--text-muted); border-color: var(--border);">
+                <th class="px-5 py-2.5 font-medium">Марка / Госномер</th>
+                <th class="px-5 py-2.5 font-medium text-right">Расход</th>
+                <th class="px-5 py-2.5 font-medium text-right">Одометр</th>
+                <th class="px-5 py-2.5 font-medium text-right">Остаток</th>
+                <th class="px-5 py-2.5 font-medium text-center">Статус</th>
+                <th class="px-5 py-2.5 font-medium text-right">Действие</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y" style="border-color: var(--border);">
+            {% for v in vehicles_full %}
+            {% set st = states.get(v.id) %}
+            {% set is_active = v.id == active_vehicle_id %}
+            <tr class="{% if is_active %}active-row{% endif %}"
+                {% if is_active %}style="background: var(--primary-soft);"{% endif %}>
+                <td class="px-5 py-3 relative">
+                    {% if is_active %}
+                    <span class="absolute top-1/2 -translate-y-1/2 rounded-full"
+                          style="left: 0.5rem; width: 0.5rem; height: 0.5rem; background: var(--danger);"></span>
+                    <div class="font-medium pl-3">{{ v.make_model }}</div>
+                    <div class="text-xs tabular-nums pl-3" style="color: var(--text-muted);">{{ v.license_plate }}</div>
+                    {% else %}
+                    <div class="font-medium">{{ v.make_model }}</div>
+                    <div class="text-xs tabular-nums" style="color: var(--text-muted);">{{ v.license_plate }}</div>
+                    {% endif %}
+                </td>
+                <td class="px-5 py-3 text-right tabular-nums">{{ v.fuel_consumption_l_per_100km }} л/100км</td>
+                <td class="px-5 py-3 text-right tabular-nums">{{ st.current_odometer_km if st else '—' }} км</td>
+                <td class="px-5 py-3 text-right tabular-nums">{{ "%.2f"|format(st.current_fuel_balance_l) if st else '—' }} л</td>
+                <td class="px-5 py-3 text-center">
+                    {% if v.id == active_vehicle_id %}
+                    <span class="action-chip chip-primary" style="cursor: default;">Активный</span>
+                    {% else %}
+                    <form method="post" action="/vehicles/switch/{{ v.id }}" class="inline">
+                        <button class="action-chip">Сделать активным</button>
+                    </form>
+                    {% endif %}
+                </td>
+                <td class="px-5 py-3 text-right space-x-1">
+                    <button type="button" onclick="toggleEdit({{ v.id }})" class="action-chip">
+                        Изменить
+                    </button>
+                    {% if vehicles_full|length > 1 %}
+                    <form method="post" action="/vehicles/{{ v.id }}/delete" class="inline"
+                          onsubmit="return confirm('Удалить ТС «{{ v.make_model }} {{ v.license_plate }}» вместе с его маршрутами и историей? Это нельзя отменить.');">
+                        <button class="action-chip chip-danger">Удалить</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            <tr id="edit-row-{{ v.id }}" class="hidden">
+                <td colspan="6" class="px-5 py-4" style="background: var(--bg-subtle);">
+                    <form method="post" action="/vehicles/{{ v.id }}/update" class="grid grid-cols-3 gap-3 items-end">
+                        <label class="block">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка и модель</span>
+                            <input name="make_model" value="{{ v.make_model }}" required class="w-full">
+                        </label>
+                        <label class="block">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Госномер</span>
+                            <input name="license_plate" value="{{ v.license_plate }}" required class="w-full">
+                        </label>
+                        <label class="block">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка топлива</span>
+                            <input name="fuel_grade" value="{{ v.fuel_grade }}" class="w-full">
+                        </label>
+                        <label class="block">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Бак, л</span>
+                            <input type="text" inputmode="decimal" name="tank_capacity_l"
+                                   pattern="[0-9]+([.,][0-9]+)?"
+                                   value="{{ v.tank_capacity_l }}" class="w-full">
+                        </label>
+                        <label class="block">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Расход л/100км</span>
+                            <input type="text" inputmode="decimal" name="fuel_consumption_l_per_100km"
+                                   pattern="[0-9]+([.,][0-9]+)?"
+                                   value="{{ v.fuel_consumption_l_per_100km }}" class="w-full">
+                        </label>
+                        <label class="block col-span-3">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Базовый адрес</span>
+                            <input name="base_address" value="{{ v.base_address }}" required class="w-full">
+                        </label>
+                        <label class="block">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Текущий одометр, км</span>
+                            <input type="number" name="current_odometer_km"
+                                   value="{{ st.current_odometer_km if st else 0 }}" class="w-full">
+                        </label>
+                        <label class="block">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Остаток топлива, л</span>
+                            <input type="text" inputmode="decimal" name="current_fuel_balance_l"
+                                   pattern="[0-9]+([.,][0-9]+)?"
+                                   value="{{ st.current_fuel_balance_l if st else 0 }}" class="w-full">
+                        </label>
+                        <label class="block">
+                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Последняя дата</span>
+                            <input type="date" name="last_date"
+                                   value="{{ st.last_date.isoformat() if st else today }}" class="w-full">
+                        </label>
+                        <div class="col-span-3 flex gap-2 mt-2">
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                            <button type="button" onclick="toggleEdit({{ v.id }})" class="btn btn-ghost">Отмена</button>
+                        </div>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+<div class="card p-5">
+    <h3 class="text-sm font-semibold mb-4">Добавить автомобиль</h3>
+    <form method="post" action="/vehicles/add" class="grid grid-cols-3 gap-3 items-end">
+        <label class="block">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка и модель</span>
+            <input name="make_model" required placeholder="Rolls Royce" class="w-full">
+        </label>
+        <label class="block">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Госномер</span>
+            <input name="license_plate" required placeholder="А123БВ 178" class="w-full">
+        </label>
+        <label class="block">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка топлива</span>
+            <input name="fuel_grade" value="АИ-95" class="w-full">
+        </label>
+        <label class="block">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Объём бака, л</span>
+            <input type="text" inputmode="decimal" name="tank_capacity_l"
+                   pattern="[0-9]+([.,][0-9]+)?" value="50" class="w-full">
+        </label>
+        <label class="block">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Расход, л / 100 км</span>
+            <input type="text" inputmode="decimal" name="fuel_consumption_l_per_100km"
+                   pattern="[0-9]+([.,][0-9]+)?" required placeholder="10.4" class="w-full">
+        </label>
+        <div></div>
+        <label class="block col-span-3">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Базовый адрес</span>
+            <input name="base_address" required placeholder="Санкт-Петербург, Репищева 10" class="w-full">
+        </label>
+        <label class="block">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Одометр на старте, км</span>
+            <input type="number" name="start_odometer_km" required class="w-full">
+        </label>
+        <label class="block">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Остаток топлива, л</span>
+            <input type="text" inputmode="decimal" name="start_fuel_balance_l"
+                   pattern="[0-9]+([.,][0-9]+)?" required class="w-full">
+        </label>
+        <label class="block">
+            <span class="text-xs block mb-1" style="color: var(--text-muted);">Дата (последний день прошлого месяца)</span>
+            <input type="date" name="start_date" value="{{ today }}" required class="w-full">
+        </label>
+        <button type="submit" class="col-span-3 btn btn-primary">
+            + Добавить автомобиль (станет активным)
+        </button>
+    </form>
+    <p class="text-xs mt-3" style="color: var(--text-faded);">
+        После добавления автомобиль автоматически станет активным.
+        Каталог адресов и историю путевых листов нужно будет завести заново для этого ТС.
+    </p>
+</div>
+
+<script>
+function toggleEdit(id) {
+    const row = document.getElementById('edit-row-' + id);
+    row.classList.toggle('hidden');
+}
+</script>
+{% endblock %}

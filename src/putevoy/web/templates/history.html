@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% set active_page = 'history' %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-semibold mb-1">История</h1>
+    <p class="text-sm" style="color: var(--text-muted);">
+        Все ранее сгенерированные путевые листы можно перескачать без повторной генерации.
+    </p>
+</div>
+
+{% if runs %}
+<div class="mb-4">
+    <a href="/download/fuel-full" class="btn btn-secondary">
+        📚 Скачать полный журнал учёта топлива (все месяцы)
+    </a>
+</div>
+
+<div class="card overflow-hidden">
+    <table class="min-w-full text-sm">
+        <thead>
+            <tr class="text-left text-xs uppercase tracking-wider border-b"
+                style="color: var(--text-muted); border-color: var(--border);">
+                <th class="px-5 py-2.5 font-medium">Месяц</th>
+                <th class="px-5 py-2.5 font-medium text-center">Статус</th>
+                <th class="px-5 py-2.5 font-medium text-right">Создан</th>
+                <th class="px-5 py-2.5 font-medium text-right">Скачать</th>
+                <th class="px-5 py-2.5 font-medium text-right">Действие</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y" style="border-color: var(--border);">
+            {% for run in runs %}
+            <tr>
+                <td class="px-5 py-3 font-medium">{{ MONTH_NOMINATIVE_RU[run.month] }} {{ run.year }}</td>
+                <td class="px-5 py-3 text-center">
+                    {% if run.validation_ok %}
+                    <span class="badge-success text-xs px-2 py-0.5 rounded-full font-medium">валидно</span>
+                    {% else %}
+                    <span class="badge-warning text-xs px-2 py-0.5 rounded-full font-medium">замечания</span>
+                    {% endif %}
+                </td>
+                <td class="px-5 py-3 text-right text-xs" style="color: var(--text-muted);">
+                    {{ run.generated_at.strftime('%d.%m.%Y · %H:%M') }}
+                </td>
+                <td class="px-5 py-3 text-right space-x-1">
+                    <a href="/preview/waybill/{{ run.year }}/{{ run.month }}" target="_blank" class="action-chip">PDF</a>
+                    <a href="/download/waybill/{{ run.year }}/{{ run.month }}" class="action-chip chip-primary">Путевые</a>
+                    <a href="/download/fuel-month/{{ run.year }}/{{ run.month }}" class="action-chip chip-success">Журнал</a>
+                </td>
+                <td class="px-5 py-3 text-right space-x-1">
+                    <a href="/generate?year={{ run.year }}&month={{ run.month }}" class="action-chip">
+                        Изменить
+                    </a>
+                    <form method="post"
+                          action="/generate/{{ run.year }}/{{ run.month }}/delete"
+                          class="inline"
+                          onsubmit="return confirm('Удалить путевые листы за {{ MONTH_NOMINATIVE_RU[run.month] }} {{ run.year }}?');">
+                        <button class="action-chip chip-danger">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card p-12 text-center">
+    <div class="text-4xl mb-3">📋</div>
+    <p class="text-sm mb-4" style="color: var(--text-muted);">
+        Ещё ни одного месяца не сгенерировано.
+    </p>
+    <a href="/dashboard" class="btn btn-primary">Перейти на обзор →</a>
+</div>
+{% endif %}
+{% endblock %}

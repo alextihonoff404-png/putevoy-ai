@@ -1,0 +1,60 @@
+<div class="space-y-4">
+    <div class="card p-5">
+        <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold">{{ month_name }} {{ year }}</h3>
+            {% if valid %}
+            <span class="badge-success text-xs px-2 py-0.5 rounded-full font-medium">валидно</span>
+            {% else %}
+            <span class="badge-warning text-xs px-2 py-0.5 rounded-full font-medium">с замечаниями</span>
+            {% endif %}
+        </div>
+        <dl class="text-xs space-y-1" style="color: var(--text-muted);">
+            <div class="flex justify-between"><dt>Рабочих дней:</dt><dd class="font-medium" style="color: var(--text);">{{ days_count }}</dd></div>
+            <div class="flex justify-between"><dt>Распознано заправок:</dt><dd class="font-medium" style="color: var(--text);">{{ fuelings_count }}</dd></div>
+            <div class="flex justify-between"><dt>Подобран seed:</dt><dd class="font-medium" style="color: var(--text);">{{ seed_used }} ({{ seed_attempts }} попыток)</dd></div>
+            <div class="flex justify-between"><dt>Финальный одометр:</dt><dd class="font-medium" style="color: var(--text);">{{ final_odometer }} км</dd></div>
+            <div class="flex justify-between"><dt>Остаток топлива:</dt><dd class="font-medium" style="color: var(--text);">{{ final_balance }} л</dd></div>
+        </dl>
+    </div>
+
+    <div class="card p-5 space-y-2">
+        <h3 class="text-sm font-semibold mb-3">Скачать / Просмотреть</h3>
+        <a href="/preview/waybill/{{ year }}/{{ month }}" target="_blank"
+           class="btn btn-secondary w-full justify-center">
+            👁 Просмотр путевых в PDF
+        </a>
+        <a href="/download/waybill/{{ year }}/{{ month }}"
+           class="btn btn-primary w-full justify-center">
+            📄 Скачать путевые листы (.xlsx)
+        </a>
+        <a href="/download/fuel-month/{{ year }}/{{ month }}"
+           class="btn btn-secondary w-full justify-center"
+           style="background: var(--success-soft); color: #047857; border-color: #a7f3d0;">
+            ⛽ Журнал — только {{ month_name }} (.xlsx)
+        </a>
+        <a href="/download/fuel-full"
+           class="btn btn-secondary w-full justify-center">
+            📚 Журнал — вся история (.xlsx)
+        </a>
+    </div>
+
+    {% if report.issues %}
+    <div class="card p-5">
+        <h3 class="text-sm font-semibold mb-2">Замечания</h3>
+        <ul class="text-xs space-y-1 max-h-64 overflow-y-auto" style="color: var(--text-muted);">
+            {% for issue in report.issues %}
+            <li class="flex gap-2">
+                <span class="font-medium" style="color: {% if issue.severity == 'error' %}var(--danger){% else %}var(--warning){% endif %};">
+                    {{ issue.severity }}
+                </span>
+                <span>{{ issue.message }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <div class="text-center">
+        <a href="/dashboard" class="text-xs link">← Вернуться на обзор</a>
+    </div>
+</div>

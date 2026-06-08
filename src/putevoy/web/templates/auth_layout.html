@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% set active_page = '' %}
+{# Макрос password_field вынесен в _password_field.html — там его импортируют
+   login.html и register.html. Здесь только обёртка-карточка для auth-страниц. #}
+
+{% block content %}
+<div class="max-w-md mx-auto mt-12">
+    <div class="card p-8">
+        <h1 class="text-2xl font-semibold mb-1">{% block auth_title %}{% endblock %}</h1>
+        <p class="text-sm mb-6" style="color: var(--text-muted);">{% block auth_subtitle %}{% endblock %}</p>
+
+        {% if errors %}
+        <div class="rounded-md p-3 mb-4 text-sm"
+             style="background: var(--danger-soft); border: 1px solid #fecaca; color: var(--danger);">
+            {% for e in errors %}
+            <div>• {{ e }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block auth_form %}{% endblock %}
+    </div>
+    <div class="text-center mt-4 text-xs" style="color: var(--text-muted);">
+        {% block auth_footer %}{% endblock %}
+    </div>
+</div>
+
+<script>
+    // Один общий обработчик на все кнопки-глаза в форме.
+    document.addEventListener('click', function (e) {
+        const btn = e.target.closest('.pwd-toggle');
+        if (!btn) return;
+        e.preventDefault();
+        const input = document.getElementById(btn.dataset.target);
+        if (!input) return;
+        const isHidden = input.type === 'password';
+        input.type = isHidden ? 'text' : 'password';
+        // переключаем иконки
+        btn.querySelector('.pwd-eye-open').classList.toggle('hidden', isHidden);
+        btn.querySelector('.pwd-eye-closed').classList.toggle('hidden', !isHidden);
+    });
+</script>
+{% endblock %}

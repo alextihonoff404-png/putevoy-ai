@@ -1,0 +1,44 @@
+[project]
+name = "putevoy"
+version = "0.1.0"
+description = "Сервис генерации путевых листов и учёта топлива"
+requires-python = ">=3.11"
+dependencies = [
+    "openpyxl>=3.1.2",
+    "workalendar>=17.0.0",
+    "python-dateutil>=2.8.2",
+    "pydantic>=2.6.0",
+    "typer>=0.12.0",
+    "fastapi>=0.110",
+    "uvicorn[standard]>=0.27",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "sqlalchemy>=2.0",
+    "bcrypt>=4.0",
+    "itsdangerous>=2.1",  # для подписи сессий Starlette
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.4.0",
+]
+
+[project.scripts]
+putevoy = "putevoy.cli:app"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"

@@ -1,0 +1,83 @@
+{
+  "name": "preset_mintrans_390_v1",
+  "version": 1,
+  "description": "Двусторонняя форма путевого листа, парные дни на одном развороте",
+  "front": {
+    "day_left": {
+      "waybill_number": "BY1",
+      "day_of_month": "AD2",
+      "month_genitive": "AI2",
+      "year_short": "AX2",
+      "medical_exam_date_top": "AM18",
+      "medical_exam_date_bottom": "AM20",
+      "release_datetime": "BP33",
+      "return_datetime": "AA40",
+      "odometer_start": "BU31",
+      "odometer_end": "AA43",
+      "fuel_issued": "BU49",
+      "fuel_balance_start": "BU52",
+      "fuel_balance_end": "BU53",
+      "fuel_consumption_formula": "BU54",
+      "fuel_consumption_formula_text": "=(BU49+BU52)-BU53"
+    },
+    "day_right": {
+      "waybill_number": "FW1",
+      "day_of_month": "EB2",
+      "month_genitive": "EG2",
+      "year_short": "EV2",
+      "medical_exam_date_top": "EK18",
+      "medical_exam_date_bottom": "EK20",
+      "release_datetime": "FN33",
+      "return_datetime": "DY40",
+      "odometer_start": "FS31",
+      "odometer_start_formula_text": "=AA43",
+      "odometer_end": "DY43",
+      "fuel_issued": "FS49",
+      "fuel_balance_start": "FS52",
+      "fuel_balance_start_formula_text": "=BU53",
+      "fuel_balance_end": "FS53",
+      "fuel_consumption_formula": "FS54",
+      "fuel_consumption_formula_text": "=(FS49+FS52)-FS53"
+    }
+  },
+  "back": {
+    "day_1_right_half": {
+      "from_col": "AK",
+      "to_col": "AP",
+      "km_col": "BC",
+      "depart_col": "AU",
+      "arrive_col": "AY",
+      "start_row": 7,
+      "row_step": 2,
+      "total_km_cell": "AM25"
+    },
+    "day_2_left_half": {
+      "from_col": "F",
+      "to_col": "K",
+      "km_col": "X",
+      "depart_col": "P",
+      "arrive_col": "T",
+      "start_row": 7,
+      "row_step": 2,
+      "total_km_cell": "H25"
+    }
+  },
+  "sheet_naming": {
+    "pair_pattern": "{d1:02d},{d2:02d} {month_short}",
+    "single_pattern": "{d1:02d} {month_short}",
+    "back_suffix": " 2",
+    "month_short_genitive": {
+      "1": "янв", "2": "февр", "3": "март", "4": "апр",
+      "5": "мая", "6": "июнь", "7": "июль", "8": "авг",
+      "9": "сент", "10": "окт", "11": "нояб", "12": "дек"
+    }
+  },
+  "constants": {
+    "tank_capacity_liters": 50,
+    "trips_per_day_max": 4,
+    "work_day_start": "09:00",
+    "trip_duration_hours": 3,
+    "trip_one_way_hours": 1,
+    "trip_at_destination_hours": 1
+  }
+}

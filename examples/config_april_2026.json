@@ -1,0 +1,42 @@
+{
+  "year": 2026,
+  "month": 4,
+  "seed": 1,
+  "organization": {
+    "name": "ООО «ИИС» (Индустрия инженерных сетей)",
+    "mechanic_name": "Павлов В.О."
+  },
+  "driver": {
+    "full_name": "Тихонов А.Ю.",
+    "snils": "098-274-108 00",
+    "license_number": "99 19 №306940",
+    "license_issue_date": "2020-10-23"
+  },
+  "vehicle": {
+    "make_model": "Changan CS55plus",
+    "license_plate": "Н960ХА 198",
+    "fuel_grade": "АИ-95",
+    "tank_capacity_l": 50,
+    "base_address": "Санкт-Петербург, Репищева 10"
+  },
+  "routes": [
+    {"address": "Санкт-Петербург, Комсомола 19",           "km_one_way": 12, "consumption_l_one_way": 1.25, "is_large": false, "weight": 3.0},
+    {"address": "Санкт-Петербург, Марсово Поле 1",         "km_one_way": 12, "consumption_l_one_way": 1.25, "is_large": false, "weight": 2.0},
+    {"address": "Санкт-Петербург, Смоленская 27",          "km_one_way": 27, "consumption_l_one_way": 3.2,  "is_large": true,  "weight": 1.5},
+    {"address": "Санкт-Петербург, Московское шоссе, 304",  "km_one_way": 44, "consumption_l_one_way": 5.0,  "is_large": true,  "weight": 1.5},
+    {"address": "Санкт-Петербург, пр. Юрия Гагарина 26",   "km_one_way": 35, "consumption_l_one_way": 4.2,  "is_large": true,  "weight": 1.0},
+    {"address": "Санкт-Петербург, Новое шоссе, 15",        "km_one_way": 25, "consumption_l_one_way": 3.0,  "is_large": true,  "weight": 1.0},
+    {"address": "Санкт-Петербург, Новое шоссе, 17",        "km_one_way": 35, "consumption_l_one_way": 4.2,  "is_large": true,  "weight": 2.0},
+    {"address": "Санкт-Петербург, Штурманская 19В",        "km_one_way": 40, "consumption_l_one_way": 4.8,  "is_large": true,  "weight": 0.5},
+    {"address": "Санкт-Петербург, Лиговский 240",          "km_one_way": 27, "consumption_l_one_way": 3.2,  "is_large": true,  "weight": 1.0}
+  ],
+  "fuelings": [
+    {"date": "2026-04-15", "liters": 47.63, "price_per_l": 69.37},
+    {"date": "2026-04-23", "liters": 45.69, "price_per_l": 69.26}
+  ],
+  "carry_over": {
+    "last_odometer_km": 49874,
+    "last_fuel_balance_l": 31.37,
+    "last_date": "2026-03-31"
+  }
+}
