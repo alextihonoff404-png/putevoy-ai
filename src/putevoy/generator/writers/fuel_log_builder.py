@@ -76,8 +76,8 @@ def _write_month(
             if trip_idx == 0:
                 ws.cell(r, 4, value=day.date).number_format = "yyyy-mm-dd"
             if day.fueling and trip_idx == 0:
-                ws.cell(r, 5, value=day.fueling.liters)
-                ws.cell(r, 6, value=day.fueling.price_per_l)
+                ws.cell(r, 5, value=round(day.fueling.liters, 2))
+                ws.cell(r, 6, value=round(day.fueling.price_per_l, 2))
                 ws.cell(r, 7, value=f"=E{r}*F{r}")
             ws.cell(r, 8, value=outbound.from_address)
             ws.cell(r, 9, value=outbound.to_address)
@@ -106,15 +106,15 @@ def _write_month(
                     # Самый первый месяц — число
                     start = carry_over_balance_l
                     if day.fueling:
-                        ws.cell(r, 13, value=round(start + day.fueling.liters - outbound.consumption_l, 4))
+                        ws.cell(r, 13, value=round(start + day.fueling.liters - outbound.consumption_l, 2))
                     else:
-                        ws.cell(r, 13, value=round(start - outbound.consumption_l, 4))
+                        ws.cell(r, 13, value=round(start - outbound.consumption_l, 2))
             else:
                 if day.fueling and trip_idx == 0:
                     ws.cell(r, 13, value=f"=(E{r}+M{r - 1})-N{r}")
                 else:
                     ws.cell(r, 13, value=f"=M{r - 1}-N{r}")
-            ws.cell(r, 14, value=outbound.consumption_l)
+            ws.cell(r, 14, value=round(outbound.consumption_l, 2))
             last_data_row_of_month = r
             r += 1
             is_first_data_row_of_month = False
@@ -126,13 +126,23 @@ def _write_month(
             ws.cell(r, 11, value=f"=J{r}+L{r}")
             ws.cell(r, 12, value=inbound.km)
             ws.cell(r, 13, value=f"=M{r - 1}-N{r}")
-            ws.cell(r, 14, value=inbound.consumption_l)
+            ws.cell(r, 14, value=round(inbound.consumption_l, 2))
             last_data_row_of_month = r
             r += 1
 
     # Итого
     ws.cell(r, 4, value="Итого:").font = Font(bold=True)
     ws.cell(r, 12, value=f"=SUM(L{data_start}:L{r - 1})").font = Font(bold=True)
+
+    # Формат «два знака» для всех ячеек с литрами/рублями (E,F,G,M,N).
+    # Применяем после записи — чтобы и значения, и формулы отображались
+    # одинаково (Excel при этом хранит полную точность для расчётов).
+    for row_idx in range(data_start, r):
+        for col_idx in (5, 6, 7, 13, 14):
+            cell = ws.cell(row_idx, col_idx)
+            if cell.value is not None:
+                cell.number_format = "0.00"
+
     return r + 1, last_data_row_of_month
 
 

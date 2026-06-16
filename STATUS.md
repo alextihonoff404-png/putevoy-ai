@@ -1,6 +1,6 @@
 # Путевой.AI — статус проекта
 
-> Дата актуальности: 2026-06-08
+> Дата актуальности: 2026-06-10
 > Текущая версия: MVP live на VPS, auth + per-user работают, идут UX-доводки
 > Изначальный план: [PLAN_MVP.md](PLAN_MVP.md)
 > **Сервис**: http://72.56.39.144:8000
@@ -330,9 +330,9 @@ set YANDEX_GEOCODER_KEY=ваш-ключ-из-developer.tech.yandex.ru
 
 ## 8. UX-доводки и GitHub workflow (текущая сессия, 2026-06-08)
 
-### СДЕЛАНО локально и в GitHub-репо (но НЕ на сервере)
+### СДЕЛАНО локально, в GitHub-репо и на сервере (2026-06-10)
 
-Накоплены 3 фикса — закоммичены в `main`, но **сервер ещё на старой версии** (rate-limit TimeWeb мешал заливать через scp):
+Накоплены 3 фикса — задеплоены на VPS через `git pull + docker compose up -d --build`:
 
 1. **`Dockerfile`: `--timeout-keep-alive 120`** — фиксит баг, когда длинное заполнение формы рвало keep-alive сокет (default 5 сек → форма «не отправлялась»).
 2. **Кнопка «Выйти»** в шапке: `base.html` уже содержит условие `{% if request.state.current_user %}`. В `app.py` middleware теперь ставит `request.state.current_user = user`. Раньше всегда был None → кнопка не показывалась.
@@ -349,29 +349,39 @@ set YANDEX_GEOCODER_KEY=ваш-ключ-из-developer.tech.yandex.ru
 
 | # | Задача | Объём | Статус |
 |---|---|---|---|
-| **48** | Мигрировать `/opt/putevoy` на git pull (одна ssh-команда наготове ниже) — это применит на сервере все 3 UX-фикса сверху | 1 минута | ⏳ ждёт пользователя |
+| ~~**48**~~ | ~~Мигрировать `/opt/putevoy` на git pull~~ — **ГОТОВО 2026-06-10**: сервер клонирован из GitHub, `.env` сохранён, контейнер пересобран. Volumes `putevoy_data` / `putevoy_downloads` уцелели. Бэкап старого `/opt/putevoy-bak` лежит на сервере для отката. Дальше обновления одной командой: `cd /opt/putevoy && git pull && docker compose up -d --build` | ✅ |
 | **49** | Прекомпилировать Tailwind CSS в статику (сейчас CDN с JIT-компилятором тормозит все переходы) | 30-60 мин | ⏳ |
 | **50** | Баг `_suggest_next_month`: при отсутствии прогонов предлагает «предыдущий календарный месяц», не учитывая `vehicle.start_date` → юзеру с start_date=29.05.2026 предлагает «май» вместо «июнь» | 15 мин | ⏳ |
-| **51** | Перенос локальной БД (история прогонов март/апрель/май + каталог адресов Changan) на сервер — опционально, если не хочется заводить вручную | 20 мин | опц. |
+| ~~**51**~~ | ~~Перенос локальной БД~~ — **ГОТОВО 2026-06-10**: локальная БД подготовлена через `_server_migration/prepare_db.py` (удалён тестовый Voyah, прогнана миграция схемы), залита через scp, подменена в named volume через helper-контейнер alpine. Бэкап прежней серверной БД лежит в `/opt/putevoy/_backups/putevoy_pre_migrate.db`. На сервере: 1 профиль (ООО «ИИС»), 1 ТС (Changan CS55plus), 6 адресов, прогон за май 2026 | ✅ |
 | **52** | Домен + HTTPS через Caddy (см. раздел в `DEPLOY.md`) | 1-2 ч | опц. |
 
-### Команда для миграции сервера на git (задача 48)
+### Команда обновления сервера (после задачи 48)
 
 ```powershell
-ssh -i $env:USERPROFILE\.ssh\putevoy_deploy root@72.56.39.144 'which git > /dev/null 2>&1 || (apt-get update -qq && apt-get install -y -qq git); cd /opt && mv putevoy putevoy-bak && git clone https://github.com/alextihonoff404-png/putevoy-ai.git putevoy && cp putevoy-bak/.env putevoy/.env && cd putevoy && docker compose up -d --build && echo DEPLOY-OK'
+ssh -i $env:USERPROFILE\.ssh\putevoy_deploy root@72.56.39.144 "cd /opt/putevoy && git pull && docker compose up -d --build"
 ```
 
-После `DEPLOY-OK`:
-- Volumes `putevoy_data` / `putevoy_downloads` остаются на месте — БД и история не теряются (Docker named volumes хранятся независимо от `/opt/putevoy`)
-- Применятся все 3 UX-фикса
-- Дальше **все обновления одной командой**: `ssh ... "cd /opt/putevoy && git pull && docker compose up -d --build"`. Никаких scp.
+Применяет любые свежие коммиты из `main` к продакшну. Volumes с БД и файлами не трогаются.
+
+### Откат к старой версии (если что-то сломается)
+
+На сервере осталась резервная копия `/opt/putevoy-bak` с тем .env и кодом, что были до миграции:
+
+```bash
+ssh ... 'cd /opt && docker compose -f putevoy/docker-compose.yml down && mv putevoy putevoy-broken && mv putevoy-bak putevoy && cd putevoy && docker compose up -d'
+```
+
+Когда станет ясно, что новая версия работает стабильно — можно удалить бэкап: `rm -rf /opt/putevoy-bak`.
 
 ### Тонкости и накопленные знания
 
 - **Rate-limit TimeWeb**: при нескольких ssh/scp подряд (>3-4 за минуту) сервер блокирует подключения на 2-5 минут с ошибкой `Connection timed out during banner exchange`. Мой PowerShell-tool (выполняет ssh от моего имени) почему-то блокируется ещё агрессивнее, чем подключения пользователя. Решение — git workflow выше.
+- **Outline VPN ломает ssh/scp**: если у пользователя включён Outline (`outline-tap0`, `10.0.85.2`), все исходящие SSH/SCP к VPS падают с `Connection closed by <ip> port 22` сразу после установки соединения. Браузер тоже зависает на «Ожидание ответа». ICMP при этом возвращает подозрительные `<1мс / TTL=64` — отвечает локальный туннель, не настоящий сервер. Диагностика: `Test-NetConnection -ComputerName 72.56.39.144 -Port 22` → если `InterfaceAlias: outline-tap0` — VPN мешает. Решение: отключить Outline на время работы.
 - **Editable install в Dockerfile** (`pip install -e .`) обязателен, иначе HTML-шаблоны, cell_maps json, builtin_templates xlsx не попадают в site-packages.
 - **Порядок middleware в Starlette**: SessionMiddleware регистрируется ПОСЛЕ `@app.middleware("http")` через `add_middleware` — иначе auth-middleware не видит `request.session`.
-- **На сервере в логах** прорывается «healthcheck `GET /login` от 127.0.0.1» каждые 30 сек — это `docker compose healthcheck`, норма.
+- **На сервере в логах** прорывается «healthcheck `GET /login` от 127.0.0.1` каждые 30 сек — это `docker compose healthcheck`, норма.
+- **Запись в named volume Docker**: с хоста напрямую путь к named volume не виден. Чтобы положить туда файл — `docker run --rm -v <volume_name>:/data -v <host_path>:/src alpine cp /src/<file> /data/<file>`. Перед заменой стоит остановить контейнер, который держит volume. Бэкап делается так же — копированием в смонтированный backup-каталог.
+- **При командах через ssh избегать `$(...)` подстановок** в одной длинной строке: проще передать фиксированное имя файла. Подстановка иногда не разворачивается, и команда падает с непонятной ошибкой usage.
 
 ### Как возобновить в новом чате
 

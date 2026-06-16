@@ -23,6 +23,8 @@ data-tmp-*/
 downloads/
 out/
 _server_backups/
+_server_migration/
+_inspect_local_db.py
 
 # Артефакты деплоя (tar.gz, которые я гонял на сервер вручную)
 *.tar.gz

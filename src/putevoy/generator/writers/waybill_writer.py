@@ -79,17 +79,17 @@ def _fill_front_day(ws, day_map: dict, day: GeneratedDay, waybill_number: int) -
     _set(ws, day_map["return_datetime"], _format_dt(day.return_datetime))
     _set(ws, day_map["odometer_end"], day.odometer_end)
     if day.fueling:
-        _set(ws, day_map["fuel_issued"], day.fueling.liters)
+        _set(ws, day_map["fuel_issued"], round(day.fueling.liters, 2))
     else:
         _set(ws, day_map["fuel_issued"], None)
-    _set(ws, day_map["fuel_balance_end"], round(day.fuel_balance_end, 4))
+    _set(ws, day_map["fuel_balance_end"], round(day.fuel_balance_end, 2))
     _set(ws, day_map["fuel_consumption_formula"], day_map["fuel_consumption_formula_text"])
 
 
 def _fill_front_day_left(ws, day_map: dict, day: GeneratedDay, waybill_number: int) -> None:
     _fill_front_day(ws, day_map, day, waybill_number)
     _set(ws, day_map["odometer_start"], day.odometer_start)
-    _set(ws, day_map["fuel_balance_start"], round(day.fuel_balance_start, 4))
+    _set(ws, day_map["fuel_balance_start"], round(day.fuel_balance_start, 2))
 
 
 def _fill_front_day_right(ws, day_map: dict, day: GeneratedDay, waybill_number: int) -> None:
