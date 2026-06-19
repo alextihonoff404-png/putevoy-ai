@@ -1,9 +1,9 @@
 # Путевой.AI — статус проекта
 
-> Дата актуальности: 2026-06-10
-> Текущая версия: MVP live на VPS, auth + per-user работают, идут UX-доводки
+> Дата актуальности: 2026-06-19
+> Текущая версия: MVP live на VPS с HTTPS, auth + per-user работают
 > Изначальный план: [PLAN_MVP.md](PLAN_MVP.md)
-> **Сервис**: http://72.56.39.144:8000
+> **Сервис**: https://autolist.pro (Caddy + Let's Encrypt). Резервно: http://72.56.39.144:8000
 > **GitHub**: https://github.com/alextihonoff404-png/putevoy-ai (public, main)
 
 ---
@@ -353,7 +353,7 @@ set YANDEX_GEOCODER_KEY=ваш-ключ-из-developer.tech.yandex.ru
 | **49** | Прекомпилировать Tailwind CSS в статику (сейчас CDN с JIT-компилятором тормозит все переходы) | 30-60 мин | ⏳ |
 | ~~**50**~~ | ~~Баг `_suggest_next_month`~~ — **ГОТОВО 2026-06-19**: при проверке оказалось, что код уже корректно учитывает `state.last_date` (фикс был, но запись в STATUS.md не вычеркнули). Покрыто 6 тестами в `tests/test_suggest_next_month.py` — все три ветки (прогоны / state.last_date / фолбэк) + edge cases с декабрём | ✅ |
 | ~~**51**~~ | ~~Перенос локальной БД~~ — **ГОТОВО 2026-06-10**: локальная БД подготовлена через `_server_migration/prepare_db.py` (удалён тестовый Voyah, прогнана миграция схемы), залита через scp, подменена в named volume через helper-контейнер alpine. Бэкап прежней серверной БД лежит в `/opt/putevoy/_backups/putevoy_pre_migrate.db`. На сервере: 1 профиль (ООО «ИИС»), 1 ТС (Changan CS55plus), 6 адресов, прогон за май 2026 | ✅ |
-| **52** | Домен + HTTPS через Caddy (см. раздел в `DEPLOY.md`) | 1-2 ч | опц. |
+| ~~**52**~~ | ~~Домен + HTTPS через Caddy~~ — **ГОТОВО 2026-06-19**: куплен `autolist.pro` на reg.ru, A-записи `@` и `www` указаны на `72.56.39.144`. На сервере поднят `caddy:2-alpine` в docker-compose, Let's Encrypt сертификат получен с первой попытки. `Caddyfile` с reverse-proxy на `web:8000`, gzip, HSTS и базовые security-headers. Включён `PUTEVOY_COOKIE_HTTPS_ONLY=1`. Порт 8000 оставлен наружу как страховка на случай падения Caddy. | ✅ |
 
 ### Команда обновления сервера (после задачи 48)
 
