@@ -19,9 +19,10 @@ services:
     build: .
     container_name: putevoy
     restart: unless-stopped
-    # Порт 8000 наружу — для прямого доступа.
-    # Когда поднимем Caddy/nginx с HTTPS, можно убрать публикацию
-    # и оставить только внутреннюю сеть.
+    # Порт 8000 оставлен наружу как страховка: если Caddy упадёт, можно
+    # достучаться напрямую через http://72.56.39.144:8000.
+    # Когда HTTPS станет основным каналом — можно убрать публикацию и
+    # ходить только через caddy (через внутреннюю docker-сеть).
     ports:
       - "8000:8000"
     environment:
@@ -30,6 +31,9 @@ services:
       #   python -c "import secrets; print(secrets.token_urlsafe(48))"
       PUTEVOY_SESSION_SECRET: ${PUTEVOY_SESSION_SECRET:?PUTEVOY_SESSION_SECRET must be set in .env}
       PUTEVOY_DATA_DIR: /data
+      # Включить флаг Secure на сессионных cookie — после перехода на HTTPS
+      # (через Caddy) cookies будут передаваться только по защищённому каналу.
+      PUTEVOY_COOKIE_HTTPS_ONLY: ${PUTEVOY_COOKIE_HTTPS_ONLY:-0}
       # API-ключ Яндекс.Геокодера (если используется автоопределение расстояний).
       # Оставьте пустым, если не нужен — OSRM работает без ключа.
       YANDEX_GEOCODER_API_KEY: ${YANDEX_GEOCODER_API_KEY:-}
@@ -53,8 +57,29 @@ services:
       retries: 3
       start_period: 30s
 
+  # Caddy — обратный прокси с автоматическим HTTPS от Let's Encrypt.
+  # Слушает 80/443, проксирует всё на web:8000 по внутренней docker-сети.
+  # Сертификаты лежат в named volume — переживают пересоздание контейнера.
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data       # сертификаты Let's Encrypt
+      - caddy_config:/config   # рантайм-конфиг Caddy
+    depends_on:
+      - web
+
 volumes:
   putevoy_data:
     name: putevoy_data
   putevoy_downloads:
     name: putevoy_downloads
+  caddy_data:
+    name: caddy_data
+  caddy_config:
+    name: caddy_config

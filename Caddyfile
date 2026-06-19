@@ -1,0 +1,25 @@
+# Caddy конфиг для Путевой.AI.
+#
+# Caddy сам:
+#   - получит Let's Encrypt сертификат для autolist.pro (HTTP-01 challenge на 80),
+#   - перенаправит http -> https,
+#   - будет проксировать всё на контейнер putevoy:8000 внутри docker-сети,
+#   - продлит сертификат каждые ~60 дней без нашего участия.
+#
+# Email — для уведомлений Let's Encrypt (срок сертификата, проблемы и т.д.).
+{
+    email alextihonoff404@gmail.com
+}
+
+autolist.pro, www.autolist.pro {
+    encode gzip
+    reverse_proxy putevoy:8000
+
+    # Стандартные security-заголовки. Базовый минимум.
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
