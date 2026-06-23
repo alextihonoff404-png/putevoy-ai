@@ -113,7 +113,7 @@
             <div class="md:hidden divide-y" style="border-color: var(--border);">
                 {% for run in runs %}
                 <div class="p-4">
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center justify-between mb-1">
                         <div class="font-semibold text-base">{{ MONTH_NOMINATIVE_RU[run.month] }} {{ run.year }}</div>
                         {% if run.validation_ok %}
                         <span class="badge-success text-xs px-2 py-0.5 rounded-full font-medium">валидно</span>
@@ -124,18 +124,21 @@
                     <div class="text-xs mb-3" style="color: var(--text-muted);">
                         Создан {{ run.generated_at.strftime('%d.%m.%Y · %H:%M') }}
                     </div>
-                    <div class="flex flex-wrap gap-1.5 mb-2">
-                        <a href="/preview/waybill/{{ run.year }}/{{ run.month }}" target="_blank" class="action-chip">PDF</a>
-                        <a href="/download/waybill/{{ run.year }}/{{ run.month }}" class="action-chip chip-primary">Путевые</a>
-                        <a href="/download/fuel-month/{{ run.year }}/{{ run.month }}" class="action-chip chip-success">Журнал</a>
+                    <div class="grid grid-cols-3 gap-2 mb-2">
+                        <a href="/preview/waybill/{{ run.year }}/{{ run.month }}" target="_blank"
+                           class="action-chip justify-center" style="padding: 0.5rem 0.5rem;">PDF</a>
+                        <a href="/download/waybill/{{ run.year }}/{{ run.month }}"
+                           class="action-chip chip-primary justify-center" style="padding: 0.5rem 0.5rem;">Путевые</a>
+                        <a href="/download/fuel-month/{{ run.year }}/{{ run.month }}"
+                           class="action-chip chip-success justify-center" style="padding: 0.5rem 0.5rem;">Журнал</a>
                     </div>
-                    <div class="flex flex-wrap gap-1.5">
-                        <a href="/generate?year={{ run.year }}&month={{ run.month }}" class="action-chip">Изменить</a>
+                    <div class="grid grid-cols-2 gap-2">
+                        <a href="/generate?year={{ run.year }}&month={{ run.month }}"
+                           class="action-chip justify-center" style="padding: 0.5rem 0.5rem;">Изменить</a>
                         <form method="post"
                               action="/generate/{{ run.year }}/{{ run.month }}/delete"
-                              class="inline"
                               onsubmit="return confirm('Удалить путевые листы за {{ MONTH_NOMINATIVE_RU[run.month] }} {{ run.year }}?');">
-                            <button class="action-chip chip-danger">Удалить</button>
+                            <button class="action-chip chip-danger justify-center w-full" style="padding: 0.5rem 0.5rem;">Удалить</button>
                         </form>
                     </div>
                 </div>
