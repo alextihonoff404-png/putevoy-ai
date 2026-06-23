@@ -86,15 +86,28 @@
             max-width: 12rem;
         }
 
-        /* Select с placeholder — серый, обычной толщины, по центру */
-        select { text-align: center; }
+        /* Select: убираем нативный вид (iOS иначе игнорирует padding и
+           прижимает текст/стрелку вплотную к краям) и рисуем свою стрелку-chevron.
+           padding-right оставляет место под стрелку, padding-left даёт отступ тексту. */
+        select {
+            text-align: left;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1rem;
+            padding-right: 2.25rem;
+        }
         select:required:invalid { color: var(--text-faded); font-weight: 400; }
         select option { color: var(--text); text-align: left; font-weight: 400; }
         select option[value=""] { color: var(--text-faded); }
 
         /* Селект переключения активного ТС в шапке.
            На mobile — full-width внутри гамбургер-меню.
-           На desktop (>= 768px) — фиксированные 280px рядом с логотипом. */
+           На desktop (>= 1024px) — до 280px рядом с логотипом, но может
+           сжиматься (flex: 0 1), чтобы не наезжать на навигацию при нехватке места. */
         .vehicle-switch-wrapper {
             width: 100%;
             box-sizing: border-box;
@@ -114,19 +127,11 @@
             white-space: nowrap;
             box-sizing: border-box;
         }
-        @media (min-width: 768px) {
+        @media (min-width: 1024px) {
             .vehicle-switch-wrapper {
-                width: 280px !important;
-                min-width: 280px !important;
-                max-width: 280px !important;
-                flex: 0 0 280px !important;
-            }
-            #vehicle-switch-form {
-                width: 280px !important;
-            }
-            .vehicle-select {
-                width: 280px !important;
-                flex-shrink: 0;
+                max-width: 280px;
+                min-width: 0;
+                flex: 0 1 280px;
             }
         }
 
@@ -336,7 +341,7 @@
                     </a>
                     {# Селект ТС в шапке — только на desktop. На mobile он внутри гамбургер-меню. #}
                     {% if has_profile and vehicles and vehicles|length > 1 %}
-                    <div class="vehicle-switch-wrapper hidden md:block">
+                    <div class="vehicle-switch-wrapper hidden lg:block">
                         <form method="post" action="/vehicles/switch/0" id="vehicle-switch-form">
                             <select onchange="this.form.action='/vehicles/switch/'+this.value; this.form.submit();"
                                     class="text-sm vehicle-select">
@@ -351,7 +356,7 @@
                     {% endif %}
                 </div>
                 {# Desktop navigation — горизонтальная #}
-                <nav class="hidden md:flex items-center gap-1">
+                <nav class="hidden lg:flex items-center gap-1">
                     {% if has_profile %}
                     <a href="/dashboard" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Обзор</a>
                     <a href="/vehicles" class="nav-link {% if active_page == 'vehicles' %}active{% endif %}">
@@ -384,7 +389,7 @@
                 </nav>
                 {# Mobile burger — только когда есть что показать в меню #}
                 {% if has_profile or request.state.current_user %}
-                <button class="md:hidden burger-btn" type="button"
+                <button class="lg:hidden burger-btn" type="button"
                         aria-label="Меню" aria-controls="mobile-menu"
                         onclick="toggleMobileMenu()">
                     <svg id="burger-icon" width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -403,7 +408,7 @@
             </div>
             {# === Mobile menu — раскрывается по клику на бургер ====================== #}
             {% if has_profile or request.state.current_user %}
-            <div id="mobile-menu" class="hidden md:hidden mt-3 pt-3 border-t" style="border-color: var(--border);">
+            <div id="mobile-menu" class="hidden lg:hidden mt-3 pt-3 border-t" style="border-color: var(--border);">
                 {% if has_profile and vehicles and vehicles|length > 1 %}
                 <div class="vehicle-switch-wrapper mb-3">
                     <form method="post" action="/vehicles/switch/0">
