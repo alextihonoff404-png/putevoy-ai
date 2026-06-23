@@ -93,34 +93,41 @@
         select option[value=""] { color: var(--text-faded); }
 
         /* Селект переключения активного ТС в шапке.
-           Ширина 280px зашита тройной защитой: wrapper, форма и сам селект.
-           flex-shrink: 0 везде — flex-контейнер не может ничего сжать. */
+           На mobile — full-width внутри гамбургер-меню.
+           На desktop (>= 768px) — фиксированные 280px рядом с логотипом. */
         .vehicle-switch-wrapper {
-            width: 280px !important;
-            min-width: 280px !important;
-            max-width: 280px !important;
-            flex: 0 0 280px !important;
+            width: 100%;
             box-sizing: border-box;
         }
         #vehicle-switch-form {
-            width: 280px !important;
-            min-width: 280px !important;
-            max-width: 280px !important;
+            width: 100%;
             margin: 0;
             box-sizing: border-box;
         }
         .vehicle-select {
             text-align: left;
-            width: 280px !important;
-            min-width: 280px !important;
-            max-width: 280px !important;
-            flex-shrink: 0;
+            width: 100%;
             height: 2.25rem;
             padding: 0.25rem 2.25rem 0.25rem 0.875rem;
             text-overflow: ellipsis;
             overflow: hidden;
             white-space: nowrap;
             box-sizing: border-box;
+        }
+        @media (min-width: 768px) {
+            .vehicle-switch-wrapper {
+                width: 280px !important;
+                min-width: 280px !important;
+                max-width: 280px !important;
+                flex: 0 0 280px !important;
+            }
+            #vehicle-switch-form {
+                width: 280px !important;
+            }
+            .vehicle-select {
+                width: 280px !important;
+                flex-shrink: 0;
+            }
         }
 
         input[type="checkbox"], input[type="radio"] {
@@ -198,6 +205,48 @@
         }
         .nav-link.active .badge { background: white; color: var(--primary-hover); }
 
+        /* === Мобильное меню =================================================== */
+        .burger-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            border-radius: 0.5rem;
+            color: var(--text-muted);
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex-shrink: 0;
+        }
+        .burger-btn:hover { background: var(--bg-hover); color: var(--text); }
+        .burger-btn:active { background: var(--bg-subtle); }
+        .mobile-menu-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5rem;
+            padding: 0.75rem 0.875rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            min-height: 44px;
+            transition: all 0.15s;
+        }
+        .mobile-menu-link:hover { background: var(--bg-hover); color: var(--text); }
+        .mobile-menu-link:active { background: var(--bg-subtle); }
+        .mobile-menu-link.active {
+            background: var(--primary-soft);
+            color: var(--primary-hover);
+        }
+        .mobile-menu-link .badge {
+            margin-left: 0;
+            font-size: 0.75rem;
+        }
+        .mobile-menu-link.active .badge { background: white; color: var(--primary-hover); }
+
         /* === Бейджи статусов ================================================== */
         .badge-success { background: var(--success-soft); color: #047857; }
         .badge-warning { background: var(--warning-soft); color: #b45309; }
@@ -264,28 +313,100 @@
 </head>
 <body class="min-h-screen flex flex-col">
     <header class="bg-white border-b" style="border-color: var(--border);">
-        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
-            <div class="flex items-center gap-6">
-                <a href="/" class="flex items-center gap-2.5 group">
-                    {# SVG-логотип: стилизованная стрелка-путь #}
-                    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="0" y="0" width="28" height="28" rx="7" fill="url(#logo-gradient)"/>
-                        <path d="M7 18 Q 11 8, 14 14 T 21 10"
-                              stroke="white" stroke-width="2.25"
-                              stroke-linecap="round" fill="none"/>
-                        <circle cx="21" cy="10" r="2" fill="white"/>
-                        <defs>
-                            <linearGradient id="logo-gradient" x1="0" y1="0" x2="28" y2="28">
-                                <stop offset="0%" stop-color="#6366f1"/>
-                                <stop offset="100%" stop-color="#8b5cf6"/>
-                            </linearGradient>
-                        </defs>
+        <div class="max-w-6xl mx-auto px-4 md:px-6 py-3">
+            {# === Верхняя строка: логотип + (desktop nav | mobile burger) ============ #}
+            <div class="flex items-center justify-between gap-4">
+                <div class="flex items-center gap-6 min-w-0">
+                    <a href="/" class="flex items-center gap-2.5 group flex-shrink-0">
+                        {# SVG-логотип: стилизованная стрелка-путь #}
+                        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="0" y="0" width="28" height="28" rx="7" fill="url(#logo-gradient)"/>
+                            <path d="M7 18 Q 11 8, 14 14 T 21 10"
+                                  stroke="white" stroke-width="2.25"
+                                  stroke-linecap="round" fill="none"/>
+                            <circle cx="21" cy="10" r="2" fill="white"/>
+                            <defs>
+                                <linearGradient id="logo-gradient" x1="0" y1="0" x2="28" y2="28">
+                                    <stop offset="0%" stop-color="#6366f1"/>
+                                    <stop offset="100%" stop-color="#8b5cf6"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <span class="text-base font-semibold tracking-tight">Путевой<span style="color: var(--primary);">.AI</span></span>
+                    </a>
+                    {# Селект ТС в шапке — только на desktop. На mobile он внутри гамбургер-меню. #}
+                    {% if has_profile and vehicles and vehicles|length > 1 %}
+                    <div class="vehicle-switch-wrapper hidden md:block">
+                        <form method="post" action="/vehicles/switch/0" id="vehicle-switch-form">
+                            <select onchange="this.form.action='/vehicles/switch/'+this.value; this.form.submit();"
+                                    class="text-sm vehicle-select">
+                                {% for v in vehicles %}
+                                <option value="{{ v.id }}" {% if v.id == active_vehicle_id %}selected{% endif %}>
+                                    {{ v.make_model }} · {{ v.license_plate }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+                {# Desktop navigation — горизонтальная #}
+                <nav class="hidden md:flex items-center gap-1">
+                    {% if has_profile %}
+                    <a href="/dashboard" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Обзор</a>
+                    <a href="/vehicles" class="nav-link {% if active_page == 'vehicles' %}active{% endif %}">
+                        Авто<span class="badge">{{ vehicles|length }}</span>
+                    </a>
+                    <a href="/routes" class="nav-link {% if active_page == 'routes' %}active{% endif %}">
+                        Адреса<span class="badge">{{ routes_count }}</span>
+                    </a>
+                    <a href="/generate" class="nav-link {% if active_page == 'generate' %}active{% endif %}">Новый месяц</a>
+                    <a href="/history" class="nav-link {% if active_page == 'history' %}active{% endif %}">
+                        История<span class="badge">{{ runs_count }}</span>
+                    </a>
+                    <a href="/setup" class="nav-link {% if active_page == 'setup' %}active{% endif %}">Профиль</a>
+                    {% endif %}
+                    {% if request.state.current_user %}
+                    <form method="post" action="/logout" class="ml-3 inline">
+                        <button class="nav-link" type="submit"
+                                title="Выйти ({{ request.state.current_user.email }})"
+                                style="color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Выйти
+                        </button>
+                    </form>
+                    {% endif %}
+                </nav>
+                {# Mobile burger — только когда есть что показать в меню #}
+                {% if has_profile or request.state.current_user %}
+                <button class="md:hidden burger-btn" type="button"
+                        aria-label="Меню" aria-controls="mobile-menu"
+                        onclick="toggleMobileMenu()">
+                    <svg id="burger-icon" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
-                    <span class="text-base font-semibold tracking-tight">Путевой<span style="color: var(--primary);">.AI</span></span>
-                </a>
+                    <svg id="close-icon" class="hidden" width="22" height="22" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                        <line x1="6" y1="18" x2="18" y2="6"></line>
+                    </svg>
+                </button>
+                {% endif %}
+            </div>
+            {# === Mobile menu — раскрывается по клику на бургер ====================== #}
+            {% if has_profile or request.state.current_user %}
+            <div id="mobile-menu" class="hidden md:hidden mt-3 pt-3 border-t" style="border-color: var(--border);">
                 {% if has_profile and vehicles and vehicles|length > 1 %}
-                <div class="vehicle-switch-wrapper">
-                    <form method="post" action="/vehicles/switch/0" id="vehicle-switch-form" style="width: 100%; margin: 0;">
+                <div class="vehicle-switch-wrapper mb-3">
+                    <form method="post" action="/vehicles/switch/0">
                         <select onchange="this.form.action='/vehicles/switch/'+this.value; this.form.submit();"
                                 class="text-sm vehicle-select">
                             {% for v in vehicles %}
@@ -297,44 +418,61 @@
                     </form>
                 </div>
                 {% endif %}
-            </div>
-            <nav class="flex items-center gap-1">
                 {% if has_profile %}
-                <a href="/dashboard" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Обзор</a>
-                <a href="/vehicles" class="nav-link {% if active_page == 'vehicles' %}active{% endif %}">
-                    Авто<span class="badge">{{ vehicles|length }}</span>
-                </a>
-                <a href="/routes" class="nav-link {% if active_page == 'routes' %}active{% endif %}">
-                    Адреса<span class="badge">{{ routes_count }}</span>
-                </a>
-                <a href="/generate" class="nav-link {% if active_page == 'generate' %}active{% endif %}">Новый месяц</a>
-                <a href="/history" class="nav-link {% if active_page == 'history' %}active{% endif %}">
-                    История<span class="badge">{{ runs_count }}</span>
-                </a>
-                <a href="/setup" class="nav-link {% if active_page == 'setup' %}active{% endif %}">Профиль</a>
+                <nav class="flex flex-col">
+                    <a href="/dashboard" class="mobile-menu-link {% if active_page == 'dashboard' %}active{% endif %}">Обзор</a>
+                    <a href="/vehicles" class="mobile-menu-link {% if active_page == 'vehicles' %}active{% endif %}">
+                        <span>Авто</span><span class="badge">{{ vehicles|length }}</span>
+                    </a>
+                    <a href="/routes" class="mobile-menu-link {% if active_page == 'routes' %}active{% endif %}">
+                        <span>Адреса</span><span class="badge">{{ routes_count }}</span>
+                    </a>
+                    <a href="/generate" class="mobile-menu-link {% if active_page == 'generate' %}active{% endif %}">Новый месяц</a>
+                    <a href="/history" class="mobile-menu-link {% if active_page == 'history' %}active{% endif %}">
+                        <span>История</span><span class="badge">{{ runs_count }}</span>
+                    </a>
+                    <a href="/setup" class="mobile-menu-link {% if active_page == 'setup' %}active{% endif %}">Профиль</a>
+                </nav>
                 {% endif %}
                 {% if request.state.current_user %}
-                <form method="post" action="/logout" class="ml-3 inline">
-                    <button class="nav-link" type="submit"
-                            title="Выйти ({{ request.state.current_user.email }})"
-                            style="color: var(--text-muted); display: inline-flex; align-items: center; gap: 6px;">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                            <polyline points="16 17 21 12 16 7"></polyline>
-                            <line x1="21" y1="12" x2="9" y2="12"></line>
-                        </svg>
-                        Выйти
+                <form method="post" action="/logout" class="mt-2 pt-2 border-t" style="border-color: var(--border);">
+                    <button class="mobile-menu-link w-full text-left" type="submit"
+                            title="Выйти ({{ request.state.current_user.email }})">
+                        <span class="inline-flex items-center gap-2">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
+                            Выйти
+                        </span>
                     </button>
                 </form>
                 {% endif %}
-            </nav>
+            </div>
+            {% endif %}
         </div>
     </header>
-    <main class="flex-1 w-full max-w-6xl mx-auto px-6 py-8">
+    <main class="flex-1 w-full max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-8">
         {% block content %}{% endblock %}
     </main>
-    <footer class="w-full max-w-6xl mx-auto px-6 py-6 text-xs" style="color: var(--text-faded);">
+    <script>
+        // Гамбургер: тогглим видимость mobile-menu и иконку (≡ ↔ ✕).
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            const burger = document.getElementById('burger-icon');
+            const close = document.getElementById('close-icon');
+            if (!menu) return;
+            const opening = menu.classList.contains('hidden');
+            menu.classList.toggle('hidden');
+            if (burger && close) {
+                burger.classList.toggle('hidden', opening);
+                close.classList.toggle('hidden', !opening);
+            }
+        }
+    </script>
+    <footer class="w-full max-w-6xl mx-auto px-4 md:px-6 py-6 text-xs" style="color: var(--text-faded);">
         © 2026 · Сервис автоматической подготовки путевых листов
     </footer>
 </body>
