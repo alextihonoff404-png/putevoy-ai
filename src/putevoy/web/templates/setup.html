@@ -21,7 +21,7 @@
 
         <section class="card p-5">
             <h2 class="text-sm font-semibold mb-4" style="color: var(--text-muted);">1. Организация</h2>
-            <div class="grid grid-cols-2 gap-3 items-end">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                 <label class="col-span-2 block">
                     <span class="text-xs block mb-1" style="color: var(--text-muted);">Название организации</span>
                     <input name="organization_name" required
@@ -37,7 +37,7 @@
 
         <section class="card p-5">
             <h2 class="text-sm font-semibold mb-4" style="color: var(--text-muted);">2. Водитель</h2>
-            <div class="grid grid-cols-2 gap-3 items-end">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                 <label class="col-span-2 block">
                     <span class="text-xs block mb-1" style="color: var(--text-muted);">ФИО</span>
                     <input name="driver_full_name" required
@@ -63,7 +63,7 @@
 
         <section class="card p-5">
             <h2 class="text-sm font-semibold mb-4" style="color: var(--text-muted);">3. Транспортное средство</h2>
-            <div class="grid grid-cols-2 gap-3 items-end">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                 <label class="block">
                     <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка и модель</span>
                     <input name="vehicle_make_model" required
@@ -85,13 +85,13 @@
                            pattern="[0-9]+([.,][0-9]+)?"
                            value="{{ profile.vehicle.tank_capacity_l if profile else 50 }}" class="w-full">
                 </label>
-                <div class="col-span-2 block">
+                <div class="col-span-1 md:col-span-2 block">
                     <span class="text-xs block mb-1" style="color: var(--text-muted);">Базовый адрес (откуда выезжаете и куда возвращаетесь)</span>
                     <div class="grid grid-cols-12 gap-2">
                         <input name="base_city" placeholder="Санкт-Петербург" required
                                value="{{ address_parts.city if address_parts else '' }}"
-                               class="col-span-4">
-                        <select name="base_street_type" required class="col-span-2">
+                               class="col-span-12 md:col-span-4">
+                        <select name="base_street_type" required class="col-span-3 md:col-span-2">
                             {% set selected_type = address_parts.street_type if address_parts else 'улица' %}
                             {% for t in ['улица', 'проспект', 'переулок', 'шоссе', 'набережная', 'площадь', 'бульвар', 'проезд', 'тупик', 'аллея', 'микрорайон'] %}
                             <option value="{{ t }}" {% if t == selected_type %}selected{% endif %}>{{ t }}</option>
@@ -99,13 +99,13 @@
                         </select>
                         <input name="base_street_name" placeholder="Невский" required
                                value="{{ address_parts.street_name if address_parts else '' }}"
-                               class="col-span-3">
+                               class="col-span-9 md:col-span-3">
                         <input name="base_house_number" placeholder="10" required
                                value="{{ address_parts.house_number if address_parts else '' }}"
-                               class="col-span-2 text-center" style="text-align: center;">
+                               class="col-span-6 md:col-span-2 text-center" style="text-align: center;">
                         <input name="base_corpus" placeholder="к (опц.)"
                                value="{{ address_parts.corpus if address_parts else '' }}"
-                               class="col-span-1 text-center" style="text-align: center;">
+                               class="col-span-6 md:col-span-1 text-center" style="text-align: center;">
                     </div>
                 </div>
                 <div class="block">
@@ -213,7 +213,7 @@
             }
             </script>
 
-            <div class="grid grid-cols-3 gap-3 items-end">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
                 <label class="block">
                     <span class="text-xs block mb-1" style="color: var(--text-muted);">Одометр на старте, км</span>
                     <input type="number" name="start_odometer_km" required

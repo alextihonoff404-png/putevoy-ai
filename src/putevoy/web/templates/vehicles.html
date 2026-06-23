@@ -10,9 +10,64 @@
     </p>
 </div>
 
+{# Edit-форма вынесена в макрос — используется и в desktop-таблице, и в mobile-карточках. #}
+{% macro edit_form(v, st, today) %}
+<form method="post" action="/vehicles/{{ v.id }}/update" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка и модель</span>
+        <input name="make_model" value="{{ v.make_model }}" required class="w-full">
+    </label>
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Госномер</span>
+        <input name="license_plate" value="{{ v.license_plate }}" required class="w-full">
+    </label>
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка топлива</span>
+        <input name="fuel_grade" value="{{ v.fuel_grade }}" class="w-full">
+    </label>
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Бак, л</span>
+        <input type="text" inputmode="decimal" name="tank_capacity_l"
+               pattern="[0-9]+([.,][0-9]+)?"
+               value="{{ v.tank_capacity_l }}" class="w-full">
+    </label>
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Расход л/100км</span>
+        <input type="text" inputmode="decimal" name="fuel_consumption_l_per_100km"
+               pattern="[0-9]+([.,][0-9]+)?"
+               value="{{ v.fuel_consumption_l_per_100km }}" class="w-full">
+    </label>
+    <label class="block col-span-1 md:col-span-3">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Базовый адрес</span>
+        <input name="base_address" value="{{ v.base_address }}" required class="w-full">
+    </label>
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Текущий одометр, км</span>
+        <input type="number" name="current_odometer_km"
+               value="{{ st.current_odometer_km if st else 0 }}" class="w-full">
+    </label>
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Остаток топлива, л</span>
+        <input type="text" inputmode="decimal" name="current_fuel_balance_l"
+               pattern="[0-9]+([.,][0-9]+)?"
+               value="{{ st.current_fuel_balance_l if st else 0 }}" class="w-full">
+    </label>
+    <label class="block">
+        <span class="text-xs block mb-1" style="color: var(--text-muted);">Последняя дата</span>
+        <input type="date" name="last_date"
+               value="{{ st.last_date.isoformat() if st else today }}" class="w-full">
+    </label>
+    <div class="col-span-1 md:col-span-3 flex gap-2 mt-2">
+        <button type="submit" class="btn btn-primary">Сохранить</button>
+        <button type="button" onclick="toggleEdit({{ v.id }})" class="btn btn-ghost">Отмена</button>
+    </div>
+</form>
+{% endmacro %}
+
 {% if vehicles_full %}
 <div class="card overflow-hidden mb-6">
-    <table class="min-w-full text-sm">
+    {# Desktop — таблица (>= 768px) #}
+    <table class="min-w-full text-sm hidden md:table">
         <thead>
             <tr class="text-left text-xs uppercase tracking-wider border-b"
                 style="color: var(--text-muted); border-color: var(--border);">
@@ -67,67 +122,73 @@
             </tr>
             <tr id="edit-row-{{ v.id }}" class="hidden">
                 <td colspan="6" class="px-5 py-4" style="background: var(--bg-subtle);">
-                    <form method="post" action="/vehicles/{{ v.id }}/update" class="grid grid-cols-3 gap-3 items-end">
-                        <label class="block">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка и модель</span>
-                            <input name="make_model" value="{{ v.make_model }}" required class="w-full">
-                        </label>
-                        <label class="block">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Госномер</span>
-                            <input name="license_plate" value="{{ v.license_plate }}" required class="w-full">
-                        </label>
-                        <label class="block">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка топлива</span>
-                            <input name="fuel_grade" value="{{ v.fuel_grade }}" class="w-full">
-                        </label>
-                        <label class="block">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Бак, л</span>
-                            <input type="text" inputmode="decimal" name="tank_capacity_l"
-                                   pattern="[0-9]+([.,][0-9]+)?"
-                                   value="{{ v.tank_capacity_l }}" class="w-full">
-                        </label>
-                        <label class="block">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Расход л/100км</span>
-                            <input type="text" inputmode="decimal" name="fuel_consumption_l_per_100km"
-                                   pattern="[0-9]+([.,][0-9]+)?"
-                                   value="{{ v.fuel_consumption_l_per_100km }}" class="w-full">
-                        </label>
-                        <label class="block col-span-3">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Базовый адрес</span>
-                            <input name="base_address" value="{{ v.base_address }}" required class="w-full">
-                        </label>
-                        <label class="block">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Текущий одометр, км</span>
-                            <input type="number" name="current_odometer_km"
-                                   value="{{ st.current_odometer_km if st else 0 }}" class="w-full">
-                        </label>
-                        <label class="block">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Остаток топлива, л</span>
-                            <input type="text" inputmode="decimal" name="current_fuel_balance_l"
-                                   pattern="[0-9]+([.,][0-9]+)?"
-                                   value="{{ st.current_fuel_balance_l if st else 0 }}" class="w-full">
-                        </label>
-                        <label class="block">
-                            <span class="text-xs block mb-1" style="color: var(--text-muted);">Последняя дата</span>
-                            <input type="date" name="last_date"
-                                   value="{{ st.last_date.isoformat() if st else today }}" class="w-full">
-                        </label>
-                        <div class="col-span-3 flex gap-2 mt-2">
-                            <button type="submit" class="btn btn-primary">Сохранить</button>
-                            <button type="button" onclick="toggleEdit({{ v.id }})" class="btn btn-ghost">Отмена</button>
-                        </div>
-                    </form>
+                    {{ edit_form(v, st, today) }}
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    {# Mobile — карточки (< 768px) #}
+    <div class="md:hidden divide-y" style="border-color: var(--border);">
+        {% for v in vehicles_full %}
+        {% set st = states.get(v.id) %}
+        {% set is_active = v.id == active_vehicle_id %}
+        <div class="p-4 {% if is_active %}active-row{% endif %}"
+             {% if is_active %}style="background: var(--primary-soft);"{% endif %}>
+            <div class="flex items-start justify-between gap-2 mb-3">
+                <div class="min-w-0">
+                    <div class="font-semibold text-base flex items-center gap-2">
+                        {% if is_active %}
+                        <span class="rounded-full flex-shrink-0"
+                              style="width: 0.5rem; height: 0.5rem; background: var(--danger);"></span>
+                        {% endif %}
+                        {{ v.make_model }}
+                    </div>
+                    <div class="text-xs tabular-nums" style="color: var(--text-muted);">{{ v.license_plate }}</div>
+                </div>
+                {% if is_active %}
+                <span class="action-chip chip-primary flex-shrink-0" style="cursor: default;">Активный</span>
+                {% else %}
+                <form method="post" action="/vehicles/switch/{{ v.id }}" class="inline flex-shrink-0">
+                    <button class="action-chip">Сделать активным</button>
+                </form>
+                {% endif %}
+            </div>
+            <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+                <div>
+                    <div style="color: var(--text-muted);">Расход</div>
+                    <div class="tabular-nums font-medium mt-0.5">{{ v.fuel_consumption_l_per_100km }} л/100км</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-muted);">Одометр</div>
+                    <div class="tabular-nums font-medium mt-0.5">{{ st.current_odometer_km if st else '—' }} км</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-muted);">Остаток</div>
+                    <div class="tabular-nums font-medium mt-0.5">{{ "%.2f"|format(st.current_fuel_balance_l) if st else '—' }} л</div>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+                <button type="button" onclick="toggleEdit({{ v.id }})" class="action-chip">Изменить</button>
+                {% if vehicles_full|length > 1 %}
+                <form method="post" action="/vehicles/{{ v.id }}/delete" class="inline"
+                      onsubmit="return confirm('Удалить ТС «{{ v.make_model }} {{ v.license_plate }}» вместе с его маршрутами и историей? Это нельзя отменить.');">
+                    <button class="action-chip chip-danger">Удалить</button>
+                </form>
+                {% endif %}
+            </div>
+            <div id="edit-block-mobile-{{ v.id }}" class="hidden mt-4 pt-4 border-t" style="border-color: var(--border);">
+                {{ edit_form(v, st, today) }}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endif %}
 
 <div class="card p-5">
     <h3 class="text-sm font-semibold mb-4">Добавить автомобиль</h3>
-    <form method="post" action="/vehicles/add" class="grid grid-cols-3 gap-3 items-end">
+    <form method="post" action="/vehicles/add" class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
         <label class="block">
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Марка и модель</span>
             <input name="make_model" required placeholder="Rolls Royce" class="w-full">
@@ -150,8 +211,8 @@
             <input type="text" inputmode="decimal" name="fuel_consumption_l_per_100km"
                    pattern="[0-9]+([.,][0-9]+)?" required placeholder="10.4" class="w-full">
         </label>
-        <div></div>
-        <label class="block col-span-3">
+        <div class="hidden md:block"></div>
+        <label class="block col-span-1 md:col-span-3">
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Базовый адрес</span>
             <input name="base_address" required placeholder="Санкт-Петербург, Репищева 10" class="w-full">
         </label>
@@ -168,7 +229,7 @@
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Дата (последний день прошлого месяца)</span>
             <input type="date" name="start_date" value="{{ today }}" required class="w-full">
         </label>
-        <button type="submit" class="col-span-3 btn btn-primary">
+        <button type="submit" class="col-span-1 md:col-span-3 btn btn-primary">
             + Добавить автомобиль (станет активным)
         </button>
     </form>
@@ -179,9 +240,13 @@
 </div>
 
 <script>
+// Один клик тогглит edit и в desktop-таблице, и в mobile-карточке.
+// CSS прячет ненужный режим, так что виден только активный.
 function toggleEdit(id) {
-    const row = document.getElementById('edit-row-' + id);
-    row.classList.toggle('hidden');
+    const desktop = document.getElementById('edit-row-' + id);
+    const mobile = document.getElementById('edit-block-mobile-' + id);
+    if (desktop) desktop.classList.toggle('hidden');
+    if (mobile) mobile.classList.toggle('hidden');
 }
 </script>
 {% endblock %}

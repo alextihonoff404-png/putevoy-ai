@@ -101,7 +101,8 @@
             <section class="card p-5">
                 <h2 class="text-sm font-semibold mb-3" style="color: var(--text-muted);">2. Заправки месяца</h2>
 
-                <div class="grid grid-cols-12 gap-2 text-xs mb-1 px-2" style="color: var(--text-muted);">
+                {# Заголовки колонок — только на desktop, на mobile поля сами с placeholder'ами и подписями #}
+                <div class="hidden md:grid grid-cols-12 gap-2 text-xs mb-1 px-2" style="color: var(--text-muted);">
                     <div class="col-span-3">Дата</div>
                     <div class="col-span-3">Литры</div>
                     <div class="col-span-3">Цена за литр, ₽</div>
@@ -109,36 +110,44 @@
                     <div class="col-span-1"></div>
                 </div>
 
-                <div id="fueling_rows" class="space-y-2">
+                <div id="fueling_rows" class="space-y-3 md:space-y-2">
                     {% if existing_fuelings %}
                         {% for f in existing_fuelings %}
-                        <div class="fueling-row grid grid-cols-12 gap-2 items-center">
+                        <div class="fueling-row grid grid-cols-12 gap-2 items-center rounded-lg md:rounded-none p-3 md:p-0"
+                             style="background: var(--bg-subtle);">
                             <input type="date" name="fueling_date" value="{{ f.date.isoformat() }}"
-                                   class="col-span-3" onchange="updateSum(this)">
+                                   class="col-span-11 md:col-span-3" onchange="updateSum(this)">
+                            <button type="button" onclick="removeRow(this)"
+                                    class="col-span-1 md:hidden text-lg leading-none hover:text-red-600 self-center"
+                                    style="color: var(--text-faded);">✕</button>
                             <input type="text" inputmode="decimal" name="fueling_liters" value="{{ f.liters }}"
-                                   placeholder="47.63" class="col-span-3" oninput="updateSum(this)">
+                                   placeholder="Литры (47.63)" class="col-span-6 md:col-span-3" oninput="updateSum(this)">
                             <input type="text" inputmode="decimal" name="fueling_price" value="{{ f.price_per_l }}"
-                                   placeholder="69.37" class="col-span-3" oninput="updateSum(this)">
-                            <div class="col-span-2 text-sm tabular-nums sum-cell rounded-md px-2.5 text-right flex items-center justify-end"
-                                 style="color: var(--text); border: 1px solid var(--border); background: var(--bg-subtle); height: 2.5rem;">
+                                   placeholder="Цена (69.37)" class="col-span-6 md:col-span-3" oninput="updateSum(this)">
+                            <div class="col-span-12 md:col-span-2 text-sm tabular-nums sum-cell rounded-md px-2.5 text-right flex items-center justify-end"
+                                 style="color: var(--text); border: 1px solid var(--border); background: var(--bg-elevated); height: 2.5rem;">
                                 {{ "%.2f" | format(f.liters * f.price_per_l) }}
                             </div>
                             <button type="button" onclick="removeRow(this)"
-                                    class="col-span-1 text-lg leading-none hover:text-red-600"
+                                    class="hidden md:block col-span-1 text-lg leading-none hover:text-red-600"
                                     style="color: var(--text-faded);">✕</button>
                         </div>
                         {% endfor %}
                     {% else %}
-                        <div class="fueling-row grid grid-cols-12 gap-2 items-center">
-                            <input type="date" name="fueling_date" class="col-span-3" onchange="updateSum(this)">
-                            <input type="text" inputmode="decimal" name="fueling_liters" placeholder="47.63"
-                                   class="col-span-3" oninput="updateSum(this)">
-                            <input type="text" inputmode="decimal" name="fueling_price" placeholder="69.37"
-                                   class="col-span-3" oninput="updateSum(this)">
-                            <div class="col-span-2 text-sm tabular-nums sum-cell rounded-md px-2.5 text-right flex items-center justify-end"
-                                 style="color: var(--text-faded); border: 1px solid var(--border); background: var(--bg-subtle); height: 2.5rem;">—</div>
+                        <div class="fueling-row grid grid-cols-12 gap-2 items-center rounded-lg md:rounded-none p-3 md:p-0"
+                             style="background: var(--bg-subtle);">
+                            <input type="date" name="fueling_date" class="col-span-11 md:col-span-3" onchange="updateSum(this)">
                             <button type="button" onclick="removeRow(this)"
-                                    class="col-span-1 text-lg leading-none hover:text-red-600"
+                                    class="col-span-1 md:hidden text-lg leading-none hover:text-red-600 self-center"
+                                    style="color: var(--text-faded);">✕</button>
+                            <input type="text" inputmode="decimal" name="fueling_liters" placeholder="Литры (47.63)"
+                                   class="col-span-6 md:col-span-3" oninput="updateSum(this)">
+                            <input type="text" inputmode="decimal" name="fueling_price" placeholder="Цена (69.37)"
+                                   class="col-span-6 md:col-span-3" oninput="updateSum(this)">
+                            <div class="col-span-12 md:col-span-2 text-sm tabular-nums sum-cell rounded-md px-2.5 text-right flex items-center justify-end"
+                                 style="color: var(--text-faded); border: 1px solid var(--border); background: var(--bg-elevated); height: 2.5rem;">—</div>
+                            <button type="button" onclick="removeRow(this)"
+                                    class="hidden md:block col-span-1 text-lg leading-none hover:text-red-600"
                                     style="color: var(--text-faded);">✕</button>
                         </div>
                     {% endif %}

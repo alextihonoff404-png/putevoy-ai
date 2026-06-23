@@ -13,7 +13,8 @@
 {% set FREQ_LABELS = {0.5: 'Редко', 1.0: 'Иногда', 2.0: 'Часто', 5.0: 'Каждый рабочий день'} %}
 {% if routes %}
 <div class="card overflow-hidden mb-6">
-    <table class="min-w-full text-sm">
+    {# Desktop — таблица (>= 768px) #}
+    <table class="min-w-full text-sm hidden md:table">
         <thead>
             <tr class="text-left text-xs uppercase tracking-wider border-b"
                 style="color: var(--text-muted); border-color: var(--border);">
@@ -42,6 +43,35 @@
             {% endfor %}
         </tbody>
     </table>
+    {# Mobile — карточки (< 768px) #}
+    <div class="md:hidden divide-y" style="border-color: var(--border);">
+        {% for r in routes %}
+        {% set burn = (r.km_one_way * 2 * profile.vehicle.fuel_consumption_l_per_100km / 100) | round(2) %}
+        <div class="p-4">
+            <div class="font-medium mb-2">{{ r.address }}</div>
+            <div class="grid grid-cols-3 gap-2 text-xs mb-3">
+                <div>
+                    <div style="color: var(--text-muted);">В одну сторону</div>
+                    <div class="tabular-nums font-medium mt-0.5">{{ r.km_one_way }} км</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-muted);">Расход</div>
+                    <div class="tabular-nums font-medium mt-0.5">{{ burn }} л</div>
+                </div>
+                <div>
+                    <div style="color: var(--text-muted);">Частота</div>
+                    <div class="font-medium mt-0.5">{{ FREQ_LABELS.get(r.weight, '—') }}</div>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+                <form method="post" action="/routes/{{ r.id }}/delete" class="inline"
+                      onsubmit="return confirm('Удалить «{{ r.address }}»?');">
+                    <button class="action-chip chip-danger">Удалить</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% else %}
 <div class="card p-8 text-center mb-6">
@@ -59,9 +89,9 @@
         (<span style="color: var(--text-muted);">{{ profile.vehicle.base_address.split(',')[0] }}</span>).
     </p>
     <form id="add_route_form" method="post" action="/routes/add"
-          class="grid grid-cols-12 gap-3 items-end gap-y-3">
+          class="grid grid-cols-2 md:grid-cols-12 gap-3 items-end gap-y-3">
 
-        <label class="col-span-2 block">
+        <label class="col-span-1 md:col-span-2 block">
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Тип</span>
             <select id="street_type" name="street_type" required class="w-full">
                 <option value="улица" selected>улица</option>
@@ -76,24 +106,24 @@
             </select>
         </label>
 
-        <label class="col-span-3 block">
+        <label class="col-span-1 md:col-span-3 block">
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Название</span>
             <input id="street_name" name="street_name" required
                    placeholder="Невский" class="w-full">
         </label>
 
-        <label class="col-span-1 block">
+        <label class="col-span-1 md:col-span-1 block">
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Дом</span>
             <input id="house_number" name="house_number" required
                    placeholder="10" class="w-full">
         </label>
 
-        <label class="col-span-1 block">
+        <label class="col-span-1 md:col-span-1 block">
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Корпус</span>
             <input id="corpus" name="corpus" placeholder="3" class="w-full">
         </label>
 
-        <div class="col-span-2 block">
+        <div class="col-span-2 md:col-span-2 block">
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Км в одну сторону</span>
             <div class="flex gap-1">
                 <input id="new_km" type="text" inputmode="decimal" name="km_one_way" required
@@ -105,7 +135,7 @@
             </div>
         </div>
 
-        <label class="col-span-2 block">
+        <label class="col-span-2 md:col-span-2 block">
             <span class="text-xs block mb-1" style="color: var(--text-muted);">Как часто ездите</span>
             <select name="weight" required class="w-full">
                 <option value="" disabled selected>— выберите —</option>
@@ -116,7 +146,7 @@
             </select>
         </label>
 
-        <button type="submit" class="col-span-1 btn btn-primary" style="height: 2.5rem;">+</button>
+        <button type="submit" class="col-span-2 md:col-span-1 btn btn-primary" style="height: 2.5rem;">+ Добавить</button>
     </form>
     <p id="distance_status" class="text-xs mt-3 min-h-[1rem]"></p>
     <p class="text-xs mt-1" style="color: var(--text-faded);">
