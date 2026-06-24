@@ -198,6 +198,7 @@ async def register_post(
     email: str = Form(...),
     password: str = Form(...),
     password_confirm: str = Form(...),
+    consent: str = Form(default=""),
 ) -> HTMLResponse:
     email = email.strip().lower()
     errors = []
@@ -207,6 +208,8 @@ async def register_post(
         errors.append("Пароль должен быть минимум 8 символов")
     if password != password_confirm:
         errors.append("Пароли не совпадают")
+    if consent != "yes":
+        errors.append("Необходимо согласие на обработку персональных данных")
     if errors:
         return templates.TemplateResponse(
             request, "register.html", {"errors": errors, "email": email}

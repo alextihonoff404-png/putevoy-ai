@@ -108,8 +108,27 @@ def test_after_login_dashboard_accessible(anon_client: TestClient):
         "email": "newuser@example.com",
         "password": "supersecret",
         "password_confirm": "supersecret",
+        "consent": "yes",
     }, follow_redirects=False)
     assert r.status_code == 303
     # После регистрации /dashboard уже доступен (но редиректит на /setup, т.к. профиля нет)
     r = anon_client.get("/setup", follow_redirects=False)
     assert r.status_code == 200
+
+
+def test_register_requires_consent(anon_client: TestClient):
+    """Без согласия на обработку ПДн регистрация отклоняется (серверная проверка)."""
+    r = anon_client.post("/register", data={
+        "email": "noconsent@example.com",
+        "password": "supersecret",
+        "password_confirm": "supersecret",
+        # consent не передан — имитируем обход disabled-кнопки на клиенте
+    }, follow_redirects=False)
+    assert r.status_code == 200  # не редирект — форма вернулась с ошибкой
+    assert "согласие" in r.text.lower()
+    # Пользователь не создан — вход с этими данными невозможен
+    r2 = anon_client.post("/login", data={
+        "email": "noconsent@example.com",
+        "password": "supersecret",
+    }, follow_redirects=False)
+    assert r2.status_code == 200  # остались на login с ошибкой

@@ -14,8 +14,25 @@
     </label>
     {{ password_field('password', 'Пароль', hint='минимум 8 символов', minlength=8) }}
     {{ password_field('password_confirm', 'Повторите пароль', minlength=8) }}
-    <button type="submit" class="btn btn-primary w-full justify-center">Создать аккаунт</button>
+
+    <label class="flex items-start gap-2 pt-1 cursor-pointer">
+        <input type="checkbox" name="consent" id="consent" value="yes" required
+               onchange="document.getElementById('register-submit').disabled = !this.checked;"
+               class="mt-0.5 flex-shrink-0">
+        <span class="text-xs" style="color: var(--text-muted);">
+            Я согласен на обработку моих персональных данных и принимаю
+            <button type="button" onclick="openPrivacy()" class="link" style="font-size: inherit;">Политику конфиденциальности</button>.
+        </span>
+    </label>
+
+    <button type="submit" id="register-submit" disabled
+            class="btn btn-primary w-full justify-center"
+            style="opacity: 1;">Создать аккаунт</button>
 </form>
+<style>
+    /* Затемняем кнопку, пока согласие не отмечено. */
+    #register-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
 {% endblock %}
 
 {% block auth_footer %}
