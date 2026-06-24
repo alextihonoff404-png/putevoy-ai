@@ -98,11 +98,16 @@
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
             background-size: 1rem;
-            /* Явный padding со всех сторон: iOS при appearance:none иначе
-               прижимает текст влево вплотную. 0.875rem слева — заметный отступ. */
-            padding: 0.5rem 2.25rem 0.5rem 0.875rem;
-            text-indent: 0;
+            /* iOS Safari игнорирует padding-left у <select> с appearance:none и
+               прижимает текст вплотную к левому краю. Рабочий обход — text-indent:
+               он СДВИГАЕТ сам текст внутри поля и iOS его уважает. Держим padding-left
+               небольшим, а основной отступ задаём через text-indent. */
+            padding: 0.5rem 2.25rem 0.5rem 0.5rem;
+            text-indent: 0.4rem;
         }
+        /* В выпадающем списке (options) text-indent не нужен — сбрасываем,
+           иначе на некоторых платформах пункты тоже сдвигаются. */
+        select option { text-indent: 0; }
         select:required:invalid { color: var(--text-faded); font-weight: 400; }
         select option { color: var(--text); text-align: left; font-weight: 400; }
         select option[value=""] { color: var(--text-faded); }
