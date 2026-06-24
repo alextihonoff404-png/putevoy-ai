@@ -50,7 +50,7 @@
             background: var(--primary-soft); color: var(--primary-hover);
             font-size: 0.8125rem; font-weight: 500; padding: 0.375rem 0.875rem; border-radius: 9999px;
         }
-        .sec-label { font-size: 0.8125rem; font-weight: 600; color: var(--primary); letter-spacing: 0.02em; }
+        .sec-label { font-size: 1.0625rem; font-weight: 600; color: var(--primary); letter-spacing: 0.01em; }
         a { color: inherit; }
         .navlink { color: var(--text-muted); font-size: 0.9375rem; transition: color 0.15s; }
         .navlink:hover { color: var(--text); }
@@ -93,10 +93,10 @@
 <!-- ====================== ГЕРО ====================== -->
 <section class="max-w-6xl mx-auto px-4 md:px-6 pt-14 md:pt-20 pb-12 md:pb-16 text-center">
     <div class="pill mb-5">Форма Минтранс №390 · Excel и PDF</div>
-    <h1 class="font-bold tracking-tight mb-5 mx-auto" style="font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.1; max-width: 18ch;">
-        Путевые листы и журнал топлива за 2 минуты в месяц
+    <h1 class="font-bold tracking-tight mb-5 mx-auto" style="font-size: clamp(2.2rem, 5.4vw, 3.6rem); line-height: 1.12; max-width: 26ch;">
+        Путевые листы для списания топлива за пару кликов
     </h1>
-    <p class="text-base md:text-lg mx-auto mb-8" style="color: var(--text-muted); max-width: 44ch; line-height: 1.6;">
+    <p class="text-base md:text-lg mx-auto mb-8" style="color: var(--text-muted); max-width: 60ch; line-height: 1.6;">
         Настройте профиль один раз. Дальше просто вставляйте заправки — сервис сам построит
         маршруты, сведёт баланс топлива и выдаст готовые документы.
     </p>
@@ -105,6 +105,31 @@
         <a href="#how" class="btn btn-secondary w-full sm:w-auto">Как это работает</a>
     </div>
     <p class="text-xs" style="color: var(--text-faded);">14 дней бесплатно · без установки · данные на серверах в РФ · HTTPS</p>
+
+    <!-- Анимированный маршрут: База → Адрес → АЗС (в стиле логотипа) -->
+    <div class="mt-10 md:mt-12 max-w-3xl mx-auto" aria-hidden="true">
+        <svg viewBox="0 0 800 200" width="100%" style="display:block; overflow:visible;">
+            <path d="M40,150 C170,40 280,40 400,110 S620,180 760,60"
+                  fill="none" stroke="#c7d2fe" stroke-width="3" stroke-dasharray="2 11" stroke-linecap="round"/>
+            <path d="M40,150 C170,40 280,40 400,110 S620,180 760,60"
+                  fill="none" stroke="#6366f1" stroke-width="3.5" stroke-linecap="round"
+                  stroke-dasharray="1150" stroke-dashoffset="1150">
+                <animate attributeName="stroke-dashoffset" from="1150" to="0" dur="3.6s" begin="0.3s" fill="freeze"/>
+            </path>
+            <circle cx="40" cy="150" r="7" fill="#fff" stroke="#6366f1" stroke-width="3"/>
+            <text x="40" y="178" text-anchor="middle" font-size="13" fill="#9ca3af" font-family="Inter, sans-serif">База</text>
+            <circle cx="400" cy="110" r="6" fill="#fff" stroke="#8b5cf6" stroke-width="3">
+                <animate attributeName="r" values="6;9;6" dur="2s" begin="1.6s" repeatCount="indefinite"/>
+            </circle>
+            <text x="400" y="138" text-anchor="middle" font-size="13" fill="#9ca3af" font-family="Inter, sans-serif">Адрес</text>
+            <circle cx="760" cy="60" r="7" fill="#6366f1" stroke="#fff" stroke-width="3"/>
+            <text x="760" y="42" text-anchor="middle" font-size="13" fill="#9ca3af" font-family="Inter, sans-serif">АЗС</text>
+            <circle r="9" fill="#6366f1" stroke="#fff" stroke-width="3.5">
+                <animateMotion dur="3.6s" begin="0.3s" repeatCount="indefinite"
+                               path="M40,150 C170,40 280,40 400,110 S620,180 760,60"/>
+            </circle>
+        </svg>
+    </div>
 
     <!-- Нарисованный мокап интерфейса -->
     <div class="card mt-12 md:mt-16 max-w-4xl mx-auto overflow-hidden text-left" style="box-shadow: 0 20px 50px -20px rgba(99,102,241,0.25);">
@@ -271,8 +296,8 @@
                 <p class="text-sm" style="color: var(--text-muted); line-height: 1.6;">Официальная форма Минтранса, а не «похожий» бланк.</p>
             </div>
             <div>
-                <div class="text-3xl font-bold mb-1" style="color: var(--primary);">Без LLM</div>
-                <p class="text-sm" style="color: var(--text-muted); line-height: 1.6;">Расчёт делает алгоритм — результат повторяем и предсказуем.</p>
+                <div class="text-3xl font-bold mb-1" style="color: var(--primary);">Без ошибок</div>
+                <p class="text-sm" style="color: var(--text-muted); line-height: 1.6;">Расчёты и форма заполняются автоматически — без опечаток и ручных правок.</p>
             </div>
             <div>
                 <div class="text-3xl font-bold mb-1" style="color: var(--primary);">Баланс ✓</div>
@@ -304,7 +329,7 @@
         </div>
         <div class="card p-6 flex flex-col relative" style="border: 2px solid var(--primary);">
             <span class="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-semibold px-3 py-1 rounded-full text-white" style="background: var(--primary);">Популярный</span>
-            <h3 class="font-semibold mb-1">Solo</h3>
+            <h3 class="font-semibold mb-1">Личный</h3>
             <div class="text-3xl font-bold mb-1">290 ₽<span class="text-sm font-normal" style="color: var(--text-faded);">/мес</span></div>
             <p class="text-xs mb-4" style="color: var(--text-faded);">1 автомобиль</p>
             <ul class="text-sm space-y-2 mb-6 flex-1" style="color: var(--text-muted);">
@@ -319,7 +344,7 @@
             <div class="text-3xl font-bold mb-1">690 ₽<span class="text-sm font-normal" style="color: var(--text-faded);">/мес</span></div>
             <p class="text-xs mb-4" style="color: var(--text-faded);">до 5 автомобилей</p>
             <ul class="text-sm space-y-2 mb-6 flex-1" style="color: var(--text-muted);">
-                <li>✓ Всё из Solo</li>
+                <li>✓ Всё из тарифа «Личный»</li>
                 <li>✓ Несколько машин в кабинете</li>
                 <li>✓ Переключение между авто</li>
             </ul>
