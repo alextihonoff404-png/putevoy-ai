@@ -86,11 +86,9 @@
             max-width: 12rem;
         }
 
-        /* Select: убираем нативный вид (iOS иначе игнорирует padding и
-           прижимает текст/стрелку вплотную к краям) и рисуем свою стрелку-chevron.
-           padding-right оставляет место под стрелку, padding-left даёт отступ тексту. */
+        /* Select: убираем нативный вид и рисуем свою стрелку-chevron — всем select.
+           Эти свойства Tailwind preflight не задаёт, поэтому конфликта нет. */
         select {
-            text-align: left;
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
@@ -98,15 +96,20 @@
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
             background-size: 1rem;
-            /* iOS Safari игнорирует padding-left у <select> с appearance:none и
-               прижимает текст вплотную к левому краю. Рабочий обход — text-indent:
-               он СДВИГАЕТ сам текст внутри поля и iOS его уважает. Держим padding-left
-               небольшим, а основной отступ задаём через text-indent. */
-            padding: 0.5rem 2.25rem 0.5rem 0.5rem;
-            text-indent: 0.4rem;
         }
-        /* В выпадающем списке (options) text-indent не нужен — сбрасываем,
-           иначе на некоторых платформах пункты тоже сдвигаются. */
+        /* Отступ текста в select.
+           ВАЖНО: Tailwind CDN preflight задаёт `select { padding: 0 }` и при равной
+           специфичности (тег `select`) перебивает наши правила — текст прилипает к
+           левому краю. Поэтому берём селектор с большей специфичностью
+           `select:not(.vehicle-select)` (0,1,1), он уверенно выигрывает у preflight (0,0,1).
+           text-indent дублирует отступ для iOS Safari, который игнорирует padding-left у select.
+           (Селект ТС в шапке .vehicle-select имеет свои паддинги и сюда не входит.) */
+        select:not(.vehicle-select) {
+            text-align: left;
+            font-size: 0.875rem;
+            padding: 0.5rem 2.25rem 0.5rem 0.25rem;
+            text-indent: 0.65rem;
+        }
         select option { text-indent: 0; }
         select:required:invalid { color: var(--text-faded); font-weight: 400; }
         select option { color: var(--text); text-align: left; font-weight: 400; }
