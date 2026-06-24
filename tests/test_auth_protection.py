@@ -22,11 +22,18 @@ def test_register_page_is_public(anon_client: TestClient):
     assert r.status_code == 200
 
 
+def test_landing_is_public_for_anon(anon_client: TestClient):
+    # Корень `/` для незалогиненного — публичный лендинг (а не редирект на /login).
+    r = anon_client.get("/", follow_redirects=False)
+    assert r.status_code == 200
+    assert "Путевой" in r.text
+    assert "Попробовать бесплатно" in r.text
+
+
 # --- Защищённые HTML-страницы: редирект на /login --------------------------
 
 
 PROTECTED_HTML_PATHS = [
-    "/",
     "/setup",
     "/dashboard",
     "/routes",

@@ -82,7 +82,7 @@ def _current_user(request: Request):
 
 
 # Пути, доступные без авторизации. Точные совпадения и префиксы.
-_PUBLIC_PATHS = {"/login", "/register"}
+_PUBLIC_PATHS = {"/", "/login", "/register"}
 _PUBLIC_PREFIXES = ("/static/",)
 
 
@@ -173,13 +173,15 @@ def _nav_ctx(request: Request | None = None) -> dict:
     return ctx
 
 
-# --- /  →  редирект ---------------------------------------------------------
+# --- /  →  лендинг (аноним) или кабинет (залогинен) -------------------------
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request) -> RedirectResponse:
-    # Auth-проверку делает middleware: сюда попадает только залогиненный user.
-    if not has_profile():
-        return RedirectResponse("/setup", status_code=302)
+async def index(request: Request):
+    # Путь публичный: сюда попадают и анонимы, и залогиненные.
+    if request.state.current_user is None:
+        return templates.TemplateResponse(request, "landing.html", {})
+    # Залогинен — уводим в кабинет; /dashboard сам отправит на /setup,
+    # если профиль ещё не настроен (ContextVar там уже выставлен middleware).
     return RedirectResponse("/dashboard", status_code=302)
 
 

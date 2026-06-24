@@ -57,11 +57,15 @@ def _setup_and_routes(client: TestClient) -> None:
         assert r.status_code == 303
 
 
-def test_root_redirects_to_setup_when_empty(client: TestClient):
-    # Залогиненный пользователь без профиля → /setup
+def test_root_redirects_to_dashboard_when_logged_in(client: TestClient):
+    # Залогиненный пользователь: / → /dashboard (а /dashboard сам уведёт на
+    # /setup, пока профиль не заполнен).
     r = client.get("/", follow_redirects=False)
     assert r.status_code == 302
-    assert r.headers["location"] == "/setup"
+    assert r.headers["location"] == "/dashboard"
+    r2 = client.get("/dashboard", follow_redirects=False)
+    assert r2.status_code in (302, 303)
+    assert r2.headers["location"] == "/setup"
 
 
 def test_setup_get_renders_form(client: TestClient):
