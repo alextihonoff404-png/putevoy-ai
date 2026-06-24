@@ -98,7 +98,10 @@
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
             background-size: 1rem;
-            padding-right: 2.25rem;
+            /* Явный padding со всех сторон: iOS при appearance:none иначе
+               прижимает текст влево вплотную. 0.875rem слева — заметный отступ. */
+            padding: 0.5rem 2.25rem 0.5rem 0.875rem;
+            text-indent: 0;
         }
         select:required:invalid { color: var(--text-faded); font-weight: 400; }
         select option { color: var(--text); text-align: left; font-weight: 400; }
@@ -478,7 +481,12 @@
         }
     </script>
     <footer class="w-full max-w-6xl mx-auto px-4 md:px-6 py-6 text-xs" style="color: var(--text-faded);">
+        <button type="button" onclick="openPrivacy()" class="link mb-1 block"
+                style="font-size: inherit;">
+            Политика конфиденциальности
+        </button>
         © 2026 · Сервис автоматической подготовки путевых листов
     </footer>
+    {% include "_privacy_modal.html" %}
 </body>
 </html>
