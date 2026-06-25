@@ -116,8 +116,14 @@
             <path d="M40,150 C170,40 280,40 400,110 S620,180 760,60"
                   fill="none" stroke="#6366f1" stroke-width="3.5" stroke-linecap="round"
                   stroke-dasharray="1150" stroke-dashoffset="1150">
+                <!-- Прорисовка до Адреса (0..0.321), держим линию, потом откат
+                     dashoffset происходит уже под невидимой линией (opacity=0). -->
                 <animate attributeName="stroke-dashoffset"
-                         values="1150;0;0;1150;1150" keyTimes="0;0.321;0.411;0.464;1"
+                         values="1150;0;0;1150;1150" keyTimes="0;0.321;0.46;0.47;1"
+                         dur="11.2s" begin="0.3s" repeatCount="indefinite"/>
+                <!-- Линия гаснет ЦЕЛИКОМ (fade), а не откатывается назад. -->
+                <animate attributeName="opacity"
+                         values="1;1;0;0" keyTimes="0;0.40;0.44;1"
                          dur="11.2s" begin="0.3s" repeatCount="indefinite"/>
             </path>
             <circle cx="40" cy="150" r="7" fill="#fff" stroke="#6366f1" stroke-width="3"/>
