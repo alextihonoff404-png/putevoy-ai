@@ -106,7 +106,9 @@
     </div>
     <p class="text-xs" style="color: var(--text-faded);">14 дней бесплатно · без установки · данные на серверах в РФ · HTTPS</p>
 
-    <!-- Анимированный маршрут: База → Адрес → АЗС (в стиле логотипа) -->
+    <!-- Анимированный маршрут: База → АЗС (по пути) → Адрес (в стиле логотипа).
+         Цикл 11.2с: прорисовка линии 3.6с + показ + плавный сброс к пунктиру +
+         пауза ~6с. Каждый цикл начинается с пунктира — видна красивая прорисовка. -->
     <div class="mt-10 md:mt-12 max-w-3xl mx-auto" aria-hidden="true">
         <svg viewBox="0 0 800 200" width="100%" style="display:block; overflow:visible;">
             <path d="M40,150 C170,40 280,40 400,110 S620,180 760,60"
@@ -114,18 +116,23 @@
             <path d="M40,150 C170,40 280,40 400,110 S620,180 760,60"
                   fill="none" stroke="#6366f1" stroke-width="3.5" stroke-linecap="round"
                   stroke-dasharray="1150" stroke-dashoffset="1150">
-                <animate attributeName="stroke-dashoffset" from="1150" to="0" dur="3.6s" begin="0.3s" fill="freeze"/>
+                <animate attributeName="stroke-dashoffset"
+                         values="1150;0;0;1150;1150" keyTimes="0;0.321;0.411;0.464;1"
+                         dur="11.2s" begin="0.3s" repeatCount="indefinite"/>
             </path>
             <circle cx="40" cy="150" r="7" fill="#fff" stroke="#6366f1" stroke-width="3"/>
             <text x="40" y="178" text-anchor="middle" font-size="13" fill="#9ca3af" font-family="Inter, sans-serif">База</text>
             <circle cx="400" cy="110" r="6" fill="#fff" stroke="#8b5cf6" stroke-width="3">
                 <animate attributeName="r" values="6;9;6" dur="2s" begin="1.6s" repeatCount="indefinite"/>
             </circle>
-            <text x="400" y="138" text-anchor="middle" font-size="13" fill="#9ca3af" font-family="Inter, sans-serif">Адрес</text>
+            <text x="400" y="138" text-anchor="middle" font-size="13" fill="#9ca3af" font-family="Inter, sans-serif">АЗС</text>
             <circle cx="760" cy="60" r="7" fill="#6366f1" stroke="#fff" stroke-width="3"/>
-            <text x="760" y="42" text-anchor="middle" font-size="13" fill="#9ca3af" font-family="Inter, sans-serif">АЗС</text>
-            <circle r="9" fill="#6366f1" stroke="#fff" stroke-width="3.5">
-                <animateMotion dur="3.6s" begin="0.3s" repeatCount="indefinite"
+            <text x="760" y="42" text-anchor="middle" font-size="13" fill="#9ca3af" font-family="Inter, sans-serif">Адрес</text>
+            <circle r="9" fill="#6366f1" stroke="#fff" stroke-width="3.5" opacity="0">
+                <animate attributeName="opacity" values="1;1;0;0" keyTimes="0;0.321;0.33;1"
+                         dur="11.2s" begin="0.3s" repeatCount="indefinite"/>
+                <animateMotion dur="11.2s" begin="0.3s" repeatCount="indefinite"
+                               keyPoints="0;1;1" keyTimes="0;0.321;1" calcMode="linear"
                                path="M40,150 C170,40 280,40 400,110 S620,180 760,60"/>
             </circle>
         </svg>
