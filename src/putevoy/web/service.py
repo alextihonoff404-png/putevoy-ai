@@ -19,7 +19,7 @@ from ..parsing.fueling_parser import parse_fuelings
 from ..storage import db as _db
 from ..storage.models import MonthlyRun as DBRun
 from ..storage.repo import (
-    get_profile, list_routes, list_runs, load_run, save_run,
+    current_vehicle_id, get_profile, list_routes, list_runs, load_run, save_run,
 )
 
 BUILTIN_TEMPLATE = (
@@ -57,9 +57,12 @@ def _carry_over_for_month(year: int, month: int) -> CarryOver:
     profile = get_profile()
     if not profile:
         raise RuntimeError("Профиль не настроен")
+    vid = current_vehicle_id()
     with _db.SessionLocal() as s:
         existing = s.execute(
-            select(DBRun).where(DBRun.year == year, DBRun.month == month)
+            select(DBRun).where(
+                DBRun.vehicle_id == vid, DBRun.year == year, DBRun.month == month,
+            )
         ).scalar_one_or_none()
         if existing and existing.days:
             first = existing.days[0]

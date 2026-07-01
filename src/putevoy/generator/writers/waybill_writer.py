@@ -131,6 +131,44 @@ def _clear_back_half(ws, half_map: dict, rows_to_clear: int = 14) -> None:
     _set(ws, half_map["total_km_cell"], None)
 
 
+def _organization_full_line(org) -> str:
+    """Строка вида «Название, ОГРН ..., адрес, телефон» для шапки формы 390н."""
+    parts = [org.name]
+    if org.ogrn:
+        parts.append(f"ОГРН {org.ogrn}")
+    if org.address:
+        parts.append(org.address)
+    if org.phone:
+        parts.append(org.phone)
+    return ", ".join(parts)
+
+
+def _fill_header(ws, header_map: dict, out: MonthlyOutput) -> None:
+    """Заполнить статическую шапку документа (организация/водитель/ТС) —
+    одна и та же для обеих половин листа и для всех дней месяца.
+    """
+    org = out.input.organization
+    driver = out.input.driver
+    vehicle = out.input.vehicle
+    license_text = (
+        f"{driver.license_number} от {driver.license_issue_date:%d.%m.%Y}г."
+    )
+    values = {
+        "organization_full_line": _organization_full_line(org),
+        "organization_short_name": org.name,
+        "mechanic_name": org.mechanic_name,
+        "driver_full_name": driver.full_name,
+        "driver_license": license_text,
+        "driver_snils": driver.snils,
+        "vehicle_make_model": vehicle.make_model,
+        "vehicle_license_plate": vehicle.license_plate,
+        "vehicle_fuel_grade": vehicle.fuel_grade,
+    }
+    for key, value in values.items():
+        for coord in header_map.get(key, []):
+            _set(ws, coord, value)
+
+
 def write_waybills(
     template_path: Path,
     output_path: Path,
@@ -205,6 +243,7 @@ def write_waybills(
             back_ws.title = _unique_title(wb, back_name, back_ws)
 
         # Лицевая
+        _fill_header(front_ws, cm["header"], out)
         _fill_front_day_left(front_ws, cm["front"]["day_left"], d1, num_left)
         if d2 is not None:
             _fill_front_day_right(front_ws, cm["front"]["day_right"], d2, num_right)

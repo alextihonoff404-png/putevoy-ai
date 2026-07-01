@@ -30,6 +30,11 @@ class Profile(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     organization_name: Mapped[str] = mapped_column(String(255))
     mechanic_name: Mapped[str] = mapped_column(String(255))
+    # Юридические реквизиты для шапки путевого листа (форма 390н требует
+    # полное наименование, адрес, ОГРН, телефон одной строкой).
+    organization_address: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    organization_ogrn: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    organization_phone: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     # На каком ТС пользователь сейчас работает. NULL = берётся минимальный по id.
     active_vehicle_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     # Привязка к пользователю (после ввода auth). NULL = legacy профиль до миграции.

@@ -274,6 +274,9 @@ async def setup_get(request: Request) -> HTMLResponse:
 async def setup_post(
     organization_name: str = Form(...),
     mechanic_name: str = Form(...),
+    organization_address: str = Form(""),
+    organization_ogrn: str = Form(""),
+    organization_phone: str = Form(""),
     driver_full_name: str = Form(...),
     driver_snils: str = Form(...),
     driver_license_number: str = Form(...),
@@ -301,6 +304,9 @@ async def setup_post(
     # бы на первое ТС по id — и второй автомобиль перезаписал бы первый.
     save_setup(
         organization_name=organization_name, mechanic_name=mechanic_name,
+        organization_address=organization_address,
+        organization_ogrn=organization_ogrn,
+        organization_phone=organization_phone,
         driver_full_name=driver_full_name, driver_snils=driver_snils,
         driver_license_number=driver_license_number,
         driver_license_issue_date=date.fromisoformat(driver_license_issue_date),

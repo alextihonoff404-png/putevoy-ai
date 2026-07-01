@@ -10,6 +10,11 @@ from pydantic import BaseModel, Field, NonNegativeFloat, PositiveFloat, Positive
 class Organization(BaseModel):
     name: str
     mechanic_name: str
+    # Юридические реквизиты для шапки путевого листа (ОГРН, адрес, телефон).
+    # Опциональны для обратной совместимости со старыми сохранёнными прогонами.
+    address: str = ""
+    ogrn: str = ""
+    phone: str = ""
 
 
 class Driver(BaseModel):

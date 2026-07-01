@@ -40,6 +40,17 @@
       "fuel_consumption_formula_text": "=(FS49+FS52)-FS53"
     }
   },
+  "header": {
+    "organization_full_line": ["Q4", "DO4"],
+    "organization_short_name": ["A27", "CY27"],
+    "mechanic_name": ["BU36", "FS36", "AB46", "DZ46"],
+    "driver_full_name": ["M14", "DK14", "BQ41", "FO41", "AD50", "EB50"],
+    "driver_license": ["S16", "DQ16"],
+    "driver_snils": ["K17", "DI17"],
+    "vehicle_make_model": ["R9", "DP9"],
+    "vehicle_license_plate": ["AB11", "DZ11"],
+    "vehicle_fuel_grade": ["BG44", "FE44"]
+  },
   "back": {
     "day_1_right_half": {
       "from_col": "AK",

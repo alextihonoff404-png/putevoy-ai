@@ -47,6 +47,10 @@ def _ensure_new_columns() -> None:
         ("profile", "user_id", "INTEGER"),
         ("driver", "user_id", "INTEGER"),
         ("vehicle", "user_id", "INTEGER"),
+        # Юридические реквизиты организации (шапка путевого листа):
+        ("profile", "organization_address", "TEXT"),
+        ("profile", "organization_ogrn", "TEXT"),
+        ("profile", "organization_phone", "TEXT"),
     ]
     with _db.engine.begin() as conn:
         for table, col, col_type in additions:
@@ -155,6 +159,8 @@ def save_setup(
     vehicle_base_address: str, vehicle_fuel_consumption_l_per_100km: float,
     start_odometer_km: int, start_fuel_balance_l: float, start_date: date,
     vehicle_id: Optional[int] = None,
+    organization_address: str = "", organization_ogrn: str = "",
+    organization_phone: str = "",
 ) -> int:
     """Первичная настройка / редактирование ТС для текущего user'а.
 
@@ -173,6 +179,9 @@ def save_setup(
             s.add(p)
         p.organization_name = organization_name
         p.mechanic_name = mechanic_name
+        p.organization_address = organization_address
+        p.organization_ogrn = organization_ogrn
+        p.organization_phone = organization_phone
 
         # Driver: один на user. Создаём если нет.
         d = _driver_for_user(s, uid)
@@ -407,7 +416,12 @@ def get_profile() -> Optional[dict]:
         if not (p and d and v and st):
             return None
         return {
-            "organization": {"name": p.organization_name, "mechanic_name": p.mechanic_name},
+            "organization": {
+                "name": p.organization_name, "mechanic_name": p.mechanic_name,
+                "address": p.organization_address or "",
+                "ogrn": p.organization_ogrn or "",
+                "phone": p.organization_phone or "",
+            },
             "driver": {
                 "full_name": d.full_name, "snils": d.snils,
                 "license_number": d.license_number,

@@ -32,6 +32,25 @@
                     <input name="mechanic_name" required
                            value="{{ profile.organization.mechanic_name if profile else '' }}" class="w-full">
                 </label>
+                <label class="col-span-2 block">
+                    <span class="text-xs block mb-1" style="color: var(--text-muted);">Юридический адрес</span>
+                    <input name="organization_address"
+                           value="{{ profile.organization.address if profile else '' }}" class="w-full">
+                </label>
+                <label class="block">
+                    <span class="text-xs block mb-1" style="color: var(--text-muted);">ОГРН</span>
+                    <input name="organization_ogrn"
+                           value="{{ profile.organization.ogrn if profile else '' }}" class="w-full">
+                </label>
+                <label class="block">
+                    <span class="text-xs block mb-1" style="color: var(--text-muted);">Телефон организации</span>
+                    <input name="organization_phone"
+                           value="{{ profile.organization.phone if profile else '' }}" class="w-full">
+                </label>
+                <p class="col-span-2 text-xs" style="color: var(--text-faded);">
+                    Реквизиты попадают в шапку путевого листа (форма 390н требует полное наименование,
+                    адрес, ОГРН и телефон). Необязательны, но рекомендуется заполнить.
+                </p>
             </div>
         </section>
 
