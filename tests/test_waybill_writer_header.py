@@ -86,6 +86,23 @@ def test_header_reflects_current_run_not_template_defaults(tmp_path):
         assert "Changan" not in value
 
 
+def test_short_name_used_for_task_block_full_for_header(tmp_path):
+    """Блок «Задание водителю» (A27) берёт сокращённое наименование, а шапка
+    с реквизитами (Q4) — полное. Иначе длинное имя не вмещается в A27."""
+    inp = _input_for("ООО «Ромашка»", "Петров П.П.", "Lada Vesta", "А000АА 77")
+    inp.organization.name = (
+        "Общество с ограниченной ответственностью «Ромашка и партнёры»"
+    )
+    inp.organization.short_name = "ООО «Ромашка»"
+    res = generate_month_auto_seed(inp)
+    out_path = write_waybills(
+        template_path=BUILTIN_TEMPLATE, output_path=tmp_path / "wb.xlsx", out=res.output,
+    )
+    cells = _front_header_cells(out_path)
+    assert cells["org_short"] == "ООО «Ромашка»"
+    assert cells["org_full"].startswith("Общество с ограниченной ответственностью")
+
+
 def test_header_differs_between_two_different_profiles(tmp_path):
     """Два разных прогона с разными профилями не должны давать одинаковую шапку —
     это и есть класс бага, который здесь фиксируется."""

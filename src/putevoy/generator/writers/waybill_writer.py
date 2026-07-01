@@ -155,7 +155,9 @@ def _fill_header(ws, header_map: dict, out: MonthlyOutput) -> None:
     )
     values = {
         "organization_full_line": _organization_full_line(org),
-        "organization_short_name": org.name,
+        # В блок «Задание водителю» — сокращённое имя (место ограничено),
+        # с фолбэком на полное для профилей без короткого наименования.
+        "organization_short_name": org.short_name or org.name,
         "mechanic_name": org.mechanic_name,
         "driver_full_name": driver.full_name,
         "driver_license": license_text,

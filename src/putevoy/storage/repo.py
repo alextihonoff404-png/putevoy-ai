@@ -45,6 +45,7 @@ def _ensure_new_columns() -> None:
         ("profile", "active_vehicle_id", "INTEGER"),
         # Per-user изоляция:
         ("profile", "user_id", "INTEGER"),
+        ("profile", "organization_short_name", "TEXT"),
         ("driver", "user_id", "INTEGER"),
         ("vehicle", "user_id", "INTEGER"),
         # Юридические реквизиты организации (шапка путевого листа):
@@ -159,6 +160,7 @@ def save_setup(
     vehicle_base_address: str, vehicle_fuel_consumption_l_per_100km: float,
     start_odometer_km: int, start_fuel_balance_l: float, start_date: date,
     vehicle_id: Optional[int] = None,
+    organization_short_name: str = "",
     organization_address: str = "", organization_ogrn: str = "",
     organization_phone: str = "",
 ) -> int:
@@ -179,6 +181,7 @@ def save_setup(
             s.add(p)
         p.organization_name = organization_name
         p.mechanic_name = mechanic_name
+        p.organization_short_name = organization_short_name
         p.organization_address = organization_address
         p.organization_ogrn = organization_ogrn
         p.organization_phone = organization_phone
@@ -418,6 +421,7 @@ def get_profile() -> Optional[dict]:
         return {
             "organization": {
                 "name": p.organization_name, "mechanic_name": p.mechanic_name,
+                "short_name": p.organization_short_name or "",
                 "address": p.organization_address or "",
                 "ogrn": p.organization_ogrn or "",
                 "phone": p.organization_phone or "",

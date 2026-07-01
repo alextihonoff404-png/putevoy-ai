@@ -23,9 +23,18 @@
             <h2 class="text-sm font-semibold mb-4" style="color: var(--text-muted);">1. Организация</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
                 <label class="col-span-2 block">
-                    <span class="text-xs block mb-1" style="color: var(--text-muted);">Название организации</span>
+                    <span class="text-xs block mb-1" style="color: var(--text-muted);">Полное наименование организации</span>
                     <input name="organization_name" required
                            value="{{ profile.organization.name if profile else '' }}" class="w-full">
+                </label>
+                <label class="col-span-2 block">
+                    <span class="text-xs block mb-1" style="color: var(--text-muted);">Сокращённое наименование</span>
+                    <input name="organization_short_name"
+                           placeholder='напр. ООО «Индустрия инженерных сетей»'
+                           value="{{ profile.organization.short_name if profile else '' }}" class="w-full">
+                    <span class="text-xs block mt-1" style="color: var(--text-faded);">
+                        Идёт в блок «Задание водителю», где полное не вмещается. Пусто → берётся полное.
+                    </span>
                 </label>
                 <label class="col-span-2 block">
                     <span class="text-xs block mb-1" style="color: var(--text-muted);">Инженер-механик (ФИО)</span>

@@ -10,6 +10,9 @@ from pydantic import BaseModel, Field, NonNegativeFloat, PositiveFloat, Positive
 class Organization(BaseModel):
     name: str
     mechanic_name: str
+    # Сокращённое наименование — для блока «Задание водителю», где полное с
+    # реквизитами не вмещается. Пусто → используется полное name.
+    short_name: str = ""
     # Юридические реквизиты для шапки путевого листа (ОГРН, адрес, телефон).
     # Опциональны для обратной совместимости со старыми сохранёнными прогонами.
     address: str = ""

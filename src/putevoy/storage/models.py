@@ -30,6 +30,8 @@ class Profile(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     organization_name: Mapped[str] = mapped_column(String(255))
     mechanic_name: Mapped[str] = mapped_column(String(255))
+    # Сокращённое наименование для блока «Задание водителю» (там мало места).
+    organization_short_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     # Юридические реквизиты для шапки путевого листа (форма 390н требует
     # полное наименование, адрес, ОГРН, телефон одной строкой).
     organization_address: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
