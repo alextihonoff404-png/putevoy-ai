@@ -13,6 +13,7 @@
 """
 from __future__ import annotations
 
+import asyncio
 import os
 import re
 import tempfile
@@ -24,6 +25,7 @@ from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
 from ..generator.calendar import MONTH_NOMINATIVE_RU, working_days
@@ -54,6 +56,10 @@ TEMPLATES_DIR.mkdir(exist_ok=True)
 STATIC_DIR.mkdir(exist_ok=True)
 DOWNLOADS_DIR = Path(tempfile.gettempdir()) / "putevoy_downloads"
 DOWNLOADS_DIR.mkdir(exist_ok=True)
+
+# LibreOffice прожорлив по CPU/RAM, а на маленьком VPS параллельные запуски
+# кладут сервис. Сериализуем конвертацию — в один момент времени только одна.
+_pdf_lock = asyncio.Lock()
 
 # Инициализируем БД при импорте модуля — идемпотентно.
 init_db()
@@ -645,7 +651,9 @@ async def api_preview_generate(
     fuelings = _parse_fueling_form(fueling_date, fueling_liters, fueling_price, "", year)
     skip_dates = _parse_skip_dates(skip_date)
     try:
-        result, report = preview_run(year, month, fuelings, skip_dates=skip_dates)
+        result, report = await run_in_threadpool(
+            preview_run, year, month, fuelings, skip_dates=skip_dates
+        )
     except RuntimeError as e:
         return JSONResponse({"ok": False, "error": str(e)})
     out = result.output
@@ -728,7 +736,9 @@ async def generate_post(
     skip_dates = _parse_skip_dates(skip_date)
 
     try:
-        result, report = run_and_persist(year, month, fuelings, skip_dates=skip_dates)
+        result, report = await run_in_threadpool(
+            run_and_persist, year, month, fuelings, skip_dates=skip_dates
+        )
     except RuntimeError as e:
         raise HTTPException(400, str(e))
 
@@ -775,7 +785,7 @@ async def history(request: Request) -> HTMLResponse:
 @app.get("/download/waybill/{year}/{month}")
 async def download_waybill(year: int, month: int) -> FileResponse:
     out_dir = DOWNLOADS_DIR / f"{year}-{month:02d}"
-    p = write_waybill_for_run(year, month, out_dir)
+    p = await run_in_threadpool(write_waybill_for_run, year, month, out_dir)
     if not p:
         raise HTTPException(404, "Прогон не найден")
     return FileResponse(p, filename=p.name,
@@ -785,7 +795,7 @@ async def download_waybill(year: int, month: int) -> FileResponse:
 @app.get("/download/fuel-month/{year}/{month}")
 async def download_fuel_month(year: int, month: int) -> FileResponse:
     out_dir = DOWNLOADS_DIR / f"{year}-{month:02d}"
-    p = write_fuel_log_for_month(year, month, out_dir)
+    p = await run_in_threadpool(write_fuel_log_for_month, year, month, out_dir)
     if not p:
         raise HTTPException(404, "Прогон не найден")
     return FileResponse(p, filename=p.name,
@@ -795,7 +805,7 @@ async def download_fuel_month(year: int, month: int) -> FileResponse:
 @app.get("/download/fuel-full")
 async def download_fuel_full() -> FileResponse:
     out_dir = DOWNLOADS_DIR / "full"
-    p = write_full_fuel_log(out_dir)
+    p = await run_in_threadpool(write_full_fuel_log, out_dir)
     if not p:
         raise HTTPException(404, "Нет прогонов")
     return FileResponse(p, filename=p.name,
@@ -803,6 +813,27 @@ async def download_fuel_full() -> FileResponse:
 
 
 # --- PDF превью ------------------------------------------------------------
+
+def _fresh_cached_pdf(pdf_dir: Path, run) -> Optional[Path]:
+    """Готовый PDF, если он новее последней генерации прогона.
+
+    Браузерный просмотрщик PDF тянет файл диапазонами (много запросов на один
+    URL), а параллельные пользователи — одновременно. Без кэша каждый такой
+    запрос заново запускал бы LibreOffice и клал сервер. Здесь отдаём готовый
+    файл, если прогон не перегенерировался с момента его создания.
+    """
+    if not pdf_dir.exists():
+        return None
+    from datetime import timezone
+    gen_epoch = (
+        run.generated_at.replace(tzinfo=timezone.utc).timestamp()
+        if run.generated_at else 0.0
+    )
+    for p in pdf_dir.glob("*.pdf"):
+        if p.stat().st_mtime >= gen_epoch:
+            return p
+    return None
+
 
 @app.get("/preview/waybill/{year}/{month}")
 async def preview_waybill(year: int, month: int) -> FileResponse:
@@ -813,18 +844,35 @@ async def preview_waybill(year: int, month: int) -> FileResponse:
     """
     from urllib.parse import quote
     from .pdf_preview import xlsx_to_pdf
-    out_dir = DOWNLOADS_DIR / f"{year}-{month:02d}"
-    xlsx = write_waybill_for_run(year, month, out_dir)
-    if not xlsx:
+    from ..storage.repo import get_run as repo_get_run
+
+    run = repo_get_run(year, month)
+    if not run:
         raise HTTPException(404, "Прогон не найден")
-    result = xlsx_to_pdf(xlsx, out_dir / "pdf")
-    if result.error:
-        raise HTTPException(503, result.error)
+
+    out_dir = DOWNLOADS_DIR / f"{year}-{month:02d}"
+    pdf_dir = out_dir / "pdf"
+
+    pdf_path = _fresh_cached_pdf(pdf_dir, run)
+    if pdf_path is None:
+        # Тяжёлую работу (openpyxl + LibreOffice) выносим из event loop и
+        # сериализуем — иначе блокируется весь сервер и рвётся память.
+        async with _pdf_lock:
+            pdf_path = _fresh_cached_pdf(pdf_dir, run)  # мог сгенерировать сосед, пока ждали lock
+            if pdf_path is None:
+                xlsx = await run_in_threadpool(write_waybill_for_run, year, month, out_dir)
+                if not xlsx:
+                    raise HTTPException(404, "Прогон не найден")
+                result = await run_in_threadpool(xlsx_to_pdf, xlsx, pdf_dir)
+                if result.error:
+                    raise HTTPException(503, result.error)
+                pdf_path = result.pdf_path
+
     # RFC 5987: filename с не-Latin-1 символами кодируется как filename*=UTF-8''<percent-encoded>.
     # Это позволяет браузерам корректно показать русское имя файла при сохранении.
-    encoded_name = quote(result.pdf_path.name, safe="")
+    encoded_name = quote(pdf_path.name, safe="")
     return FileResponse(
-        result.pdf_path,
+        pdf_path,
         media_type="application/pdf",
         headers={
             "Content-Disposition": f"inline; filename*=UTF-8''{encoded_name}",

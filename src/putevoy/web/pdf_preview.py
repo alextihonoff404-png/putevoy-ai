@@ -10,9 +10,17 @@ from __future__ import annotations
 import os
 import shutil
 import subprocess
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
+
+
+# Отдельный профиль LibreOffice — не трогаем системный ~/.config и обходим
+# встроенный single-instance lock, из-за которого повторные headless-запуски
+# зависают. Стабильный каталог (не уникальный на вызов) — конвертации всё
+# равно сериализованы на уровне веб-приложения, так что конфликта нет.
+_LO_PROFILE_DIR = Path(tempfile.gettempdir()) / "putevoy_lo_profile"
 
 
 # Стандартные пути установки LibreOffice
@@ -68,7 +76,9 @@ def xlsx_to_pdf(xlsx_path: Path, output_dir: Path) -> PdfResult:
     try:
         result = subprocess.run(
             [
-                soffice, "--headless", "--convert-to", "pdf",
+                soffice, "--headless",
+                f"-env:UserInstallation={_LO_PROFILE_DIR.as_uri()}",
+                "--convert-to", "pdf",
                 "--outdir", str(output_dir),
                 str(xlsx_path),
             ],
