@@ -649,6 +649,13 @@ async def api_preview_generate(
     if not has_profile():
         return JSONResponse({"ok": False, "error": "Профиль не настроен"})
     fuelings = _parse_fueling_form(fueling_date, fueling_liters, fueling_price, "", year)
+    bad = _out_of_month_fuelings(fuelings, year, month)
+    if bad:
+        dates = ", ".join(f.date.strftime("%d.%m.%Y") for f in bad)
+        return JSONResponse({"ok": False, "error": (
+            f"Заправки {dates} не входят в {MONTH_NOMINATIVE_RU[month]} {year} — "
+            f"исправьте даты."
+        )})
     skip_dates = _parse_skip_dates(skip_date)
     try:
         result, report = await run_in_threadpool(
@@ -705,6 +712,15 @@ def _parse_fueling_form(fueling_date, fueling_liters, fueling_price,
     return fuelings
 
 
+def _out_of_month_fuelings(fuelings: list[Fueling], year: int, month: int) -> list[Fueling]:
+    """Заправки, чья дата не входит в генерируемый месяц.
+
+    Движок привязывает заправку к конкретному дню месяца, поэтому заправка
+    из другого месяца молча выпадала бы из расчёта. Ловим это явно.
+    """
+    return [f for f in fuelings if f.date.year != year or f.date.month != month]
+
+
 def _parse_skip_dates(skip_date: list[str]) -> list[date]:
     result: list[date] = []
     for s in skip_date or []:
@@ -733,6 +749,13 @@ async def generate_post(
 
     fuelings = _parse_fueling_form(fueling_date, fueling_liters, fueling_price,
                                    fuelings_text, year)
+    bad = _out_of_month_fuelings(fuelings, year, month)
+    if bad:
+        dates = ", ".join(f.date.strftime("%d.%m.%Y") for f in bad)
+        raise HTTPException(400, (
+            f"Заправки {dates} не входят в {MONTH_NOMINATIVE_RU[month]} {year}. "
+            f"Исправьте даты заправок и попробуйте снова."
+        ))
     skip_dates = _parse_skip_dates(skip_date)
 
     try:

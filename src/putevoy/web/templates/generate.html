@@ -325,6 +325,22 @@ async function recalcPreview() {
 
 renderSkipCalendar();
 
+// Ограничиваем поля даты заправки рамками выбранного месяца: иначе пустой
+// date-picker открывается на текущем месяце, и заправка легко получает дату
+// из другого месяца — а такие заправки движок в расчёт не берёт.
+function monthBounds() {
+    const [y, m] = MONTH_YEAR;
+    const first = isoFromYMD(y, m, 1);
+    const last = isoFromYMD(y, m, new Date(y, m, 0).getDate());
+    return [first, last];
+}
+function constrainDate(input) {
+    const [first, last] = monthBounds();
+    input.min = first;
+    input.max = last;
+}
+document.querySelectorAll('#fueling_rows input[name=fueling_date]').forEach(constrainDate);
+
 document.querySelector('form[action="/generate"]').addEventListener('submit', (e) => {
     const form = e.target;
     form.querySelectorAll('input[name="skip_date"]').forEach(el => el.remove());
@@ -356,6 +372,8 @@ function addRow() {
     const first = rows.querySelector('.fueling-row');
     const clone = first.cloneNode(true);
     clone.querySelectorAll('input').forEach(i => { i.value = ''; });
+    const dateInput = clone.querySelector('input[name=fueling_date]');
+    if (dateInput) constrainDate(dateInput);
     const sumCell = clone.querySelector('.sum-cell');
     sumCell.textContent = '—';
     sumCell.style.color = 'var(--text-faded)';

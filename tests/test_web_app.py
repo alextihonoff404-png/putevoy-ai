@@ -122,6 +122,24 @@ def test_generate_full_pipeline(client: TestClient):
     assert "/download/waybill/2026/4" in r.text
 
 
+def test_generate_rejects_out_of_month_fueling(client: TestClient):
+    # Заправка с датой из другого месяца раньше молча выпадала из расчёта.
+    _setup_and_routes(client)
+    r = client.post(
+        "/generate",
+        data={
+            "year": "2026", "month": "4",
+            "fueling_date": "2026-05-15",  # май, а генерируем апрель
+            "fueling_liters": "47.63",
+            "fueling_price": "69.37",
+        },
+        follow_redirects=False,
+    )
+    assert r.status_code == 400
+    assert "15.05.2026" in r.text
+    assert "Апрель" in r.text
+
+
 def test_download_waybill_is_valid_xlsx(client: TestClient):
     _setup_and_routes(client)
     client.post("/generate", data={
