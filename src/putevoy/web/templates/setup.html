@@ -30,10 +30,9 @@
                 <label class="col-span-2 block">
                     <span class="text-xs block mb-1" style="color: var(--text-muted);">Сокращённое наименование</span>
                     <input name="organization_short_name"
-                           placeholder='напр. ООО «Индустрия инженерных сетей»'
                            value="{{ profile.organization.short_name if profile else '' }}" class="w-full">
                     <span class="text-xs block mt-1" style="color: var(--text-faded);">
-                        Идёт в блок «Задание водителю», где полное не вмещается. Пусто → берётся полное.
+                        Для блока, где не помещается полное наименование.
                     </span>
                 </label>
                 <label class="col-span-2 block">
